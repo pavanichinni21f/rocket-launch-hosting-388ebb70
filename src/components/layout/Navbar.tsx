@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Rocket, ChevronDown, Globe, MessageCircle } from 'lucide-react';
+import { Menu, X, ChevronDown, Globe, MessageCircle } from 'lucide-react';
+import ksLogo from '@/assets/kslogo.png';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -33,16 +35,17 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Rocket className="h-8 w-8 text-primary animate-rocket-launch" />
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-primary/50 rounded-full blur-sm" />
-            </div>
-            <span className="text-xl lg:text-2xl font-bold">
-              <span className="gradient-text-orange">KS</span>
-              <span className="text-foreground">Foundation</span>
+          <Link to="/" className="flex items-center gap-2">
+            <img 
+              src={ksLogo} 
+              alt="Key Secure Foundation" 
+              className="h-12 w-12 object-contain"
+            />
+            <span className="text-xl lg:text-2xl font-bold hidden sm:block">
+              <span className="gradient-text-orange">Key Secure</span>
+              <span className="text-foreground"> Foundation</span>
             </span>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">

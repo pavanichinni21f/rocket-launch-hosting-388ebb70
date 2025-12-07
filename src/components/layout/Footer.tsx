@@ -1,4 +1,6 @@
-import { Rocket, Facebook, Twitter, Youtube, Linkedin, Instagram } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Facebook, Twitter, Youtube, Linkedin, Instagram } from 'lucide-react';
+import ksLogo from '@/assets/kslogo.png';
 
 const footerLinks = {
   hosting: {
@@ -27,13 +29,17 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <Rocket className="h-8 w-8 text-primary" />
+            <Link to="/" className="flex items-center gap-2 mb-4">
+              <img 
+                src={ksLogo} 
+                alt="Key Secure Foundation" 
+                className="h-12 w-12 object-contain"
+              />
               <span className="text-xl font-bold">
-                <span className="gradient-text-orange">KS</span>
-                <span className="text-foreground">Foundation</span>
+                <span className="gradient-text-orange">Key Secure</span>
+                <span className="text-foreground"> Foundation</span>
               </span>
-            </div>
+            </Link>
             <p className="text-sm text-muted-foreground mb-6">
               Premium web hosting trusted by millions worldwide. Fast, secure, and reliable.
             </p>
