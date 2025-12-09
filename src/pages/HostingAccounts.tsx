@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -11,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { accountSchema } from '@/schemas/validationSchemas';
 import {
   Server,
   Plus,
@@ -78,15 +78,26 @@ export default function HostingAccounts() {
   const [newAccountName, setNewAccountName] = useState('');
   const [newAccountLocation, setNewAccountLocation] = useState('us-east');
   const [creating, setCreating] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const accountSchema = z.object({
-    name: z
-      .string()
-      .min(3, 'Account name must be at least 3 characters')
-      .max(50, 'Account name cannot exceed 50 characters')
-      .regex(/^[a-zA-Z0-9\- ]+$/, 'Account name may only contain letters, numbers, spaces and hyphens'),
-    server_location: z.enum(['us-east', 'us-west', 'eu-west', 'ap-south']),
-  });
+  const validateField = (field: string, value: any) => {
+    const fieldSchema = {
+      name: accountSchema.pick({ name: true }),
+      server_location: accountSchema.pick({ server_location: true }),
+    }[field];
+
+    if (!fieldSchema) return;
+
+    const result = fieldSchema.safeParse({ [field]: value });
+    const newErrors = { ...validationErrors };
+
+    if (result.success) {
+      delete newErrors[field];
+    } else {
+      newErrors[field] = result.error.errors[0]?.message || 'Invalid input';
+    }
+    setValidationErrors(newErrors);
+  };
 
   useEffect(() => {
     fetchAccounts();
@@ -131,6 +142,7 @@ export default function HostingAccounts() {
       toast.success('Hosting account created!');
       setCreateDialogOpen(false);
       setNewAccountName('');
+      setValidationErrors({});
       fetchAccounts();
     }
     setCreating(false);
@@ -204,12 +216,30 @@ export default function HostingAccounts() {
                     id="name"
                     placeholder="My Awesome Website"
                     value={newAccountName}
-                    onChange={(e) => setNewAccountName(e.target.value)}
+                    onChange={(e) => {
+                      setNewAccountName(e.target.value);
+                      validateField('name', e.target.value);
+                    }}
+                    maxLength={50}
+                    className={validationErrors.name ? 'border-destructive' : ''}
                   />
+                  <div className="flex justify-between items-start">
+                    {validationErrors.name ? (
+                      <span className="text-xs text-destructive">{validationErrors.name}</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Letters, numbers, spaces, and hyphens only</span>
+                    )}
+                    <span className={`text-xs ${newAccountName.length < 3 || newAccountName.length > 50 ? 'text-muted-foreground' : 'text-success'}`}>
+                      {newAccountName.length}/50
+                    </span>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Server Location</Label>
-                  <Select value={newAccountLocation} onValueChange={setNewAccountLocation}>
+                  <Select value={newAccountLocation} onValueChange={(value) => {
+                    setNewAccountLocation(value);
+                    validateField('server_location', value);
+                  }}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -227,7 +257,7 @@ export default function HostingAccounts() {
                 <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={createAccount} disabled={creating || !newAccountName.trim()}>
+                <Button onClick={createAccount} disabled={creating || !newAccountName.trim() || newAccountName.length < 3 || Object.keys(validationErrors).length > 0}>
                   Create Account
                 </Button>
               </DialogFooter>

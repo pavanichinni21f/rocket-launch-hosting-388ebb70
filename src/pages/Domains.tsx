@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { z } from 'zod';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import { 
   Search, 
   Globe,
@@ -35,19 +37,36 @@ const features = [
   { icon: <RefreshCw className="h-6 w-6" />, title: 'Easy Transfer', description: 'Simple domain transfer process' },
 ];
 
+const domainSearchSchema = z.object({
+  domainName: z
+    .string()
+    .min(1, 'Domain name is required')
+    .min(2, 'Domain name must be at least 2 characters')
+    .max(63, 'Domain name cannot exceed 63 characters')
+    .regex(/^[a-z0-9.-]+$/i, 'Domain name can only contain letters, numbers, dots and hyphens')
+    .regex(/^(?!-)/, 'Domain name cannot start with a hyphen')
+    .regex(/(?<!-)$/, 'Domain name cannot end with a hyphen'),
+});
+
 const Domains = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Array<{ domain: string; available: boolean; price: number }> | null>(null);
 
   const handleSearch = () => {
-    if (!searchQuery.trim()) return;
+    const parsed = domainSearchSchema.safeParse({ domainName: searchQuery.trim() });
+    
+    if (!parsed.success) {
+      const errors = parsed.error.errors.map((e) => e.message).join(', ');
+      toast.error(`Validation error: ${errors}`);
+      return;
+    }
     
     setIsSearching(true);
     
     // Simulate search
     setTimeout(() => {
-      const baseName = searchQuery.replace(/\.[a-z]+$/i, '').toLowerCase();
+      const baseName = parsed.data.domainName.replace(/\.[a-z]+$/i, '').toLowerCase();
       const results = popularTlds.slice(0, 6).map(tld => ({
         domain: baseName + tld.extension,
         available: Math.random() > 0.3,

@@ -24,9 +24,17 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
+  signInWithProvider: (provider: 'google' | 'apple' | 'github') => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
+  enrollMFA: () => Promise<{ error: Error | null; data?: { qr_code: string; secret: string } }>;
+  verifyMFA: (factorId: string, code: string) => Promise<{ error: Error | null }>;
+  unenrollMFA: (factorId: string) => Promise<{ error: Error | null }>;
+  listSessions: () => Promise<{ error: Error | null; data?: any[] }>;
+  revokeSession: (sessionId: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -126,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) return { error: new Error('Not authenticated') };
-    
+
     const { error } = await supabase
       .from('profiles')
       .update(updates)
@@ -136,9 +144,100 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.error('Failed to update profile');
       return { error };
     }
-    
+
     await refreshProfile();
     toast.success('Profile updated!');
+    return { error: null };
+  };
+
+  const signInWithProvider = async (provider: 'google' | 'apple' | 'github') => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`
+      }
+    });
+    if (error) {
+      toast.error(error.message);
+      return { error };
+    }
+    return { error: null };
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    if (error) {
+      toast.error(error.message);
+      return { error };
+    }
+    toast.success('Password reset email sent!');
+    return { error: null };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    if (error) {
+      toast.error(error.message);
+      return { error };
+    }
+    toast.success('Password updated successfully!');
+    return { error: null };
+  };
+
+  const enrollMFA = async () => {
+    const { data, error } = await supabase.auth.mfa.enroll({
+      factorType: 'totp'
+    });
+    if (error) {
+      toast.error(error.message);
+      return { error };
+    }
+    return { error: null, data };
+  };
+
+  const verifyMFA = async (factorId: string, code: string) => {
+    const { error } = await supabase.auth.mfa.verify({
+      factorId,
+      code
+    });
+    if (error) {
+      toast.error(error.message);
+      return { error };
+    }
+    toast.success('2FA verified successfully!');
+    return { error: null };
+  };
+
+  const unenrollMFA = async (factorId: string) => {
+    const { error } = await supabase.auth.mfa.unenroll(factorId);
+    if (error) {
+      toast.error(error.message);
+      return { error };
+    }
+    toast.success('2FA disabled successfully!');
+    return { error: null };
+  };
+
+  const listSessions = async () => {
+    const { data, error } = await supabase.auth.admin.listSessions();
+    if (error) {
+      toast.error(error.message);
+      return { error };
+    }
+    return { error: null, data };
+  };
+
+  const revokeSession = async (sessionId: string) => {
+    const { error } = await supabase.auth.admin.revokeSession(sessionId);
+    if (error) {
+      toast.error(error.message);
+      return { error };
+    }
+    toast.success('Session revoked successfully!');
     return { error: null };
   };
 
@@ -150,9 +249,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       signIn,
       signUp,
+      signInWithProvider,
       signOut,
       updateProfile,
-      refreshProfile
+      refreshProfile,
+      resetPassword,
+      updatePassword,
+      enrollMFA,
+      verifyMFA,
+      unenrollMFA,
+      listSessions,
+      revokeSession
     }}>
       {children}
     </AuthContext.Provider>

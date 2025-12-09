@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ticketSchema } from '@/schemas/validationSchemas';
 import {
   HelpCircle,
   Plus,
@@ -72,12 +72,27 @@ export default function Support() {
     description: '',
     priority: 'medium',
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const ticketSchema = z.object({
-    subject: z.string().min(5, 'Subject must be at least 5 characters').max(120, 'Subject must be 120 characters or less'),
-    description: z.string().max(2000, 'Description must be 2000 characters or less').nullable().optional(),
-    priority: z.enum(['low', 'medium', 'high', 'urgent']),
-  });
+  const validateField = (field: string, value: any) => {
+    const fieldSchema = {
+      subject: ticketSchema.pick({ subject: true }),
+      description: ticketSchema.pick({ description: true }),
+      priority: ticketSchema.pick({ priority: true }),
+    }[field];
+
+    if (!fieldSchema) return;
+
+    const result = fieldSchema.safeParse({ [field]: value });
+    const newErrors = { ...validationErrors };
+
+    if (result.success) {
+      delete newErrors[field];
+    } else {
+      newErrors[field] = result.error.errors[0]?.message || 'Invalid input';
+    }
+    setValidationErrors(newErrors);
+  };
 
   useEffect(() => {
     fetchTickets();
@@ -141,6 +156,7 @@ export default function Support() {
       toast.success('Support ticket created!');
       setCreateDialogOpen(false);
       setNewTicket({ subject: '', description: '', priority: 'medium' });
+      setValidationErrors({});
     }
     setCreating(false);
   };
@@ -174,15 +190,32 @@ export default function Support() {
                     id="subject"
                     placeholder="Brief description of your issue"
                     value={newTicket.subject}
-                    onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
+                    onChange={(e) => {
+                      setNewTicket({ ...newTicket, subject: e.target.value });
+                      validateField('subject', e.target.value);
+                    }}
                     maxLength={120}
+                    className={validationErrors.subject ? 'border-destructive' : ''}
                   />
+                  <div className="flex justify-between items-start">
+                    {validationErrors.subject ? (
+                      <span className="text-xs text-destructive">{validationErrors.subject}</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Min 5, max 120 characters</span>
+                    )}
+                    <span className={`text-xs ${newTicket.subject.length < 5 ? 'text-muted-foreground' : 'text-success'}`}>
+                      {newTicket.subject.length}/120
+                    </span>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="priority">Priority</Label>
                   <Select
                     value={newTicket.priority}
-                    onValueChange={(value) => setNewTicket({ ...newTicket, priority: value })}
+                    onValueChange={(value) => {
+                      setNewTicket({ ...newTicket, priority: value });
+                      validateField('priority', value);
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -202,16 +235,30 @@ export default function Support() {
                     placeholder="Provide details about your issue..."
                     rows={4}
                     value={newTicket.description}
-                    onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
+                    onChange={(e) => {
+                      setNewTicket({ ...newTicket, description: e.target.value });
+                      validateField('description', e.target.value);
+                    }}
                     maxLength={2000}
+                    className={validationErrors.description ? 'border-destructive' : ''}
                   />
+                  <div className="flex justify-between items-start">
+                    {validationErrors.description ? (
+                      <span className="text-xs text-destructive">{validationErrors.description}</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Optional, max 2000 characters</span>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {newTicket.description.length}/2000
+                    </span>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={createTicket} disabled={creating || newTicket.subject.trim().length < 5}>
+                <Button onClick={createTicket} disabled={creating || newTicket.subject.trim().length < 5 || Object.keys(validationErrors).length > 0}>
                   <Send className="h-4 w-4 mr-2" />
                   Submit Ticket
                 </Button>

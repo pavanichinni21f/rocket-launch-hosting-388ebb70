@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Rocket, Mail, Lock, User } from 'lucide-react';
+import { Loader2, Rocket, Mail, Lock, User, Chrome, Apple, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import kslogo from '@/assets/kslogo.png';
 
@@ -33,9 +33,11 @@ type SignupForm = z.infer<typeof signupSchema>;
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
+  const { signIn, signUp, signInWithProvider, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
   const from = (location.state as any)?.from?.pathname || '/dashboard';
 
@@ -71,6 +73,12 @@ export default function Auth() {
     if (!error) {
       navigate(from, { replace: true });
     }
+  };
+
+  const handleSocialAuth = async (provider: 'google' | 'apple' | 'github') => {
+    setSocialLoading(provider);
+    await signInWithProvider(provider);
+    setSocialLoading(null);
   };
 
   return (
@@ -138,6 +146,54 @@ export default function Auth() {
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
                   Sign In
                 </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSocialAuth('google')}
+                    disabled={socialLoading !== null}
+                    className="w-full"
+                  >
+                    {socialLoading === 'google' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Chrome className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSocialAuth('apple')}
+                    disabled={socialLoading !== null}
+                    className="w-full"
+                  >
+                    {socialLoading === 'apple' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Apple className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSocialAuth('github')}
+                    disabled={socialLoading !== null}
+                    className="w-full"
+                  >
+                    {socialLoading === 'github' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Github className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </form>
             </TabsContent>
 
@@ -215,6 +271,54 @@ export default function Auth() {
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
                   Create Account
                 </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSocialAuth('google')}
+                    disabled={socialLoading !== null}
+                    className="w-full"
+                  >
+                    {socialLoading === 'google' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Chrome className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSocialAuth('apple')}
+                    disabled={socialLoading !== null}
+                    className="w-full"
+                  >
+                    {socialLoading === 'apple' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Apple className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSocialAuth('github')}
+                    disabled={socialLoading !== null}
+                    className="w-full"
+                  >
+                    {socialLoading === 'github' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Github className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </form>
             </TabsContent>
           </Tabs>

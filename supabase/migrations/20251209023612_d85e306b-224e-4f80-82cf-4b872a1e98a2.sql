@@ -41,7 +41,8 @@ CREATE TABLE public.hosting_accounts (
   bandwidth_used_gb DECIMAL DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  CONSTRAINT hosting_accounts_name_length CHECK (length(name) >= 3 AND length(name) <= 50)
 );
 
 -- Create hosting_account_members table for team access
@@ -78,7 +79,9 @@ CREATE TABLE public.support_tickets (
   status TEXT DEFAULT 'open',
   assigned_to UUID REFERENCES auth.users(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  CONSTRAINT support_tickets_subject_length CHECK (length(subject) >= 5 AND length(subject) <= 120),
+  CONSTRAINT support_tickets_description_length CHECK (length(description) IS NULL OR length(description) <= 2000)
 );
 
 -- Create ticket_comments table
