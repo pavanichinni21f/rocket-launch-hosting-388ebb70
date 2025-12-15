@@ -42,7 +42,7 @@ const Navbar = () => {
             <img src={ksLogo} alt="Key Secure Foundation" className="h-12 w-12 object-contain" />
             <span className="text-xl lg:text-2xl font-bold hidden sm:block">
               <span className="gradient-text-orange">​</span>
-              <span className="text-foreground"> Foundation</span>
+              <span className="text-foreground"></span>
             </span>
           </Link>
 
