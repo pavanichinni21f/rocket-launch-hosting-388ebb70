@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 import {
   Clock,
   Play,
-  Settings,
   CheckCircle,
   XCircle,
   AlertCircle,
@@ -64,7 +63,7 @@ const Automation: React.FC = () => {
     try {
       await runTaskManually(taskId);
       toast.success('Task executed successfully');
-      await loadTasks(); // Refresh to show updated last_run
+      await loadTasks();
     } catch (error) {
       toast.error('Task execution failed');
     }
@@ -126,19 +125,17 @@ const Automation: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Automation & Scheduled Tasks</h1>
             <p className="text-muted-foreground">Manage automated tasks and cron jobs</p>
           </div>
-          <Button onClick={handleRunAllTasks} className="btn-rocket">
+          <Button onClick={handleRunAllTasks}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Run All Tasks
           </Button>
         </div>
 
-        {/* Task Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-6">
@@ -182,7 +179,7 @@ const Automation: React.FC = () => {
                       const nextRun = new Date(t.next_run);
                       const now = new Date();
                       const timeDiff = nextRun.getTime() - now.getTime();
-                      return timeDiff > 0 && timeDiff < 60 * 60 * 1000; // Due in next hour
+                      return timeDiff > 0 && timeDiff < 60 * 60 * 1000;
                     }).length}
                   </p>
                 </div>
@@ -212,7 +209,6 @@ const Automation: React.FC = () => {
           </Card>
         </div>
 
-        {/* Tasks Table */}
         <Card>
           <CardHeader>
             <CardTitle>Scheduled Tasks</CardTitle>
@@ -283,7 +279,6 @@ const Automation: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Task Details */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
@@ -341,4 +336,4 @@ const Automation: React.FC = () => {
   );
 };
 
-export default Automation;</content>
+export default Automation;
