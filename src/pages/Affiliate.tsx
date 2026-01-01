@@ -3,12 +3,10 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   Users,
@@ -16,7 +14,6 @@ import {
   Link,
   Copy,
   TrendingUp,
-  Calendar,
   CheckCircle,
   Clock,
   Share2,
@@ -47,7 +44,6 @@ const Affiliate: React.FC = () => {
   const loadAffiliateData = async () => {
     if (!user) return;
 
-    // Mock affiliate data - in production, fetch from database
     const mockData: AffiliateData = {
       isAffiliate: true,
       referralCode: 'KS' + user.id.slice(0, 6).toUpperCase(),
@@ -69,7 +65,6 @@ const Affiliate: React.FC = () => {
 
   const joinAffiliateProgram = async () => {
     setJoining(true);
-    // Mock joining - in production, create affiliate record
     setTimeout(() => {
       setData(prev => prev ? { ...prev, isAffiliate: true } : null);
       toast.success('Welcome to the affiliate program!');
@@ -107,7 +102,6 @@ const Affiliate: React.FC = () => {
             <h1 className="text-3xl font-bold mb-4">Affiliate Program</h1>
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
               Join our affiliate program and earn commissions by referring new customers.
-              Get 20% commission on all referrals for life!
             </p>
           </div>
 
@@ -176,7 +170,6 @@ const Affiliate: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Affiliate Dashboard</h1>
@@ -185,7 +178,6 @@ const Affiliate: React.FC = () => {
           <Badge className="bg-green-100 text-green-800">Active Affiliate</Badge>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-6">
@@ -244,7 +236,6 @@ const Affiliate: React.FC = () => {
           </Card>
         </div>
 
-        {/* Referral Link */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -265,12 +256,11 @@ const Affiliate: React.FC = () => {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
-              Share this link with friends and earn {data.commissionRate}% commission on their purchases
+              Share this link with friends and earn {data.commissionRate}% commission
             </p>
           </CardContent>
         </Card>
 
-        {/* Detailed Analytics */}
         <Tabs defaultValue="referrals" className="space-y-4">
           <TabsList>
             <TabsTrigger value="referrals">Referrals</TabsTrigger>
@@ -415,4 +405,4 @@ const Affiliate: React.FC = () => {
   );
 };
 
-export default Affiliate;</content>
+export default Affiliate;

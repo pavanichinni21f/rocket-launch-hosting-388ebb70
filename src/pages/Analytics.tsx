@@ -4,16 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { supabase } from '@/integrations/supabase/client';
 import {
   TrendingUp,
   Users,
   DollarSign,
   Server,
   Activity,
-  BarChart3,
-  PieChart,
-  Calendar,
   Download
 } from 'lucide-react';
 
@@ -49,7 +45,6 @@ const Analytics: React.FC = () => {
   }, []);
 
   const loadAnalytics = async () => {
-    // Mock analytics data - in production, fetch from database
     const mockData: AnalyticsData = {
       revenue: {
         total: 45678.90,
@@ -102,7 +97,6 @@ const Analytics: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Analytics & Reporting</h1>
@@ -117,7 +111,6 @@ const Analytics: React.FC = () => {
           </div>
         </div>
 
-        {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-6">
@@ -180,7 +173,6 @@ const Analytics: React.FC = () => {
           </Card>
         </div>
 
-        {/* Detailed Analytics */}
         <Tabs defaultValue="revenue" className="space-y-4">
           <TabsList>
             <TabsTrigger value="revenue">Revenue</TabsTrigger>
@@ -298,7 +290,7 @@ const Analytics: React.FC = () => {
                       <div key={service} className="flex justify-between items-center">
                         <span>{service}</span>
                         <div className="flex items-center gap-2">
-                          <Progress value={(count / data.services.total) * 100} className="w-24" />
+                          <Progress value={(count / (data?.services.total || 1)) * 100} className="w-24" />
                           <span className="font-semibold w-12 text-right">{count}</span>
                         </div>
                       </div>
@@ -421,4 +413,4 @@ const Analytics: React.FC = () => {
   );
 };
 
-export default Analytics;</content>
+export default Analytics;

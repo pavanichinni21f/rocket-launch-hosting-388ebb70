@@ -34,9 +34,7 @@ export interface ApiKey {
   created_at: string;
 }
 
-// Team Management
 export async function getTeamMembers(accountId: string): Promise<TeamMember[]> {
-  // Mock data - in production, fetch from hosting_account_members table
   return [
     {
       id: '1',
@@ -61,23 +59,18 @@ export async function getTeamMembers(accountId: string): Promise<TeamMember[]> {
 }
 
 export async function inviteTeamMember(accountId: string, email: string, role: 'admin' | 'member'): Promise<void> {
-  // In production, create invitation record and send email
   console.log(`Inviting ${email} to account ${accountId} as ${role}`);
 }
 
 export async function removeTeamMember(accountId: string, memberId: string): Promise<void> {
-  // In production, remove from hosting_account_members table
   console.log(`Removing member ${memberId} from account ${accountId}`);
 }
 
 export async function updateMemberRole(accountId: string, memberId: string, role: 'owner' | 'admin' | 'member'): Promise<void> {
-  // In production, update role in hosting_account_members table
   console.log(`Updating member ${memberId} role to ${role} in account ${accountId}`);
 }
 
-// Invitations
 export async function getPendingInvitations(accountId: string): Promise<Invitation[]> {
-  // Mock data - in production, fetch from invitations table
   return [
     {
       id: 'inv-1',
@@ -93,18 +86,14 @@ export async function getPendingInvitations(accountId: string): Promise<Invitati
 }
 
 export async function cancelInvitation(invitationId: string): Promise<void> {
-  // In production, update invitation status
   console.log(`Cancelling invitation ${invitationId}`);
 }
 
 export async function resendInvitation(invitationId: string): Promise<void> {
-  // In production, send new invitation email
   console.log(`Resending invitation ${invitationId}`);
 }
 
-// API Keys
 export async function getApiKeys(userId: string): Promise<ApiKey[]> {
-  // Mock data - in production, fetch from api_keys table
   return [
     {
       id: 'key-1',
@@ -132,23 +121,19 @@ export async function getApiKeys(userId: string): Promise<ApiKey[]> {
 }
 
 export async function createApiKey(userId: string, name: string, permissions: string[], expiresAt?: string): Promise<string> {
-  // In production, generate secure API key, hash it, and store
   const apiKey = `ks_${Math.random().toString(36).substring(2, 15)}`;
   console.log(`Created API key ${name} for user ${userId}: ${apiKey}`);
   return apiKey;
 }
 
 export async function revokeApiKey(keyId: string): Promise<void> {
-  // In production, deactivate API key
   console.log(`Revoking API key ${keyId}`);
 }
 
 export async function updateApiKeyPermissions(keyId: string, permissions: string[]): Promise<void> {
-  // In production, update permissions
   console.log(`Updating permissions for API key ${keyId}:`, permissions);
 }
 
-// Security Features
 export interface SecuritySettings {
   two_factor_enabled: boolean;
   login_notifications: boolean;
@@ -162,12 +147,11 @@ export interface SecuritySettings {
 }
 
 export async function getSecuritySettings(userId: string): Promise<SecuritySettings> {
-  // Mock data - in production, fetch from user preferences
   return {
     two_factor_enabled: true,
     login_notifications: true,
     ip_whitelist: ['192.168.1.0/24'],
-    session_timeout: 30, // minutes
+    session_timeout: 30,
     password_requirements: {
       min_length: 8,
       require_special_chars: true,
@@ -177,21 +161,17 @@ export async function getSecuritySettings(userId: string): Promise<SecuritySetti
 }
 
 export async function updateSecuritySettings(userId: string, settings: Partial<SecuritySettings>): Promise<void> {
-  // In production, update user security preferences
   console.log(`Updating security settings for user ${userId}:`, settings);
 }
 
 export async function addToIpWhitelist(userId: string, ipRange: string): Promise<void> {
-  // In production, add IP to whitelist
   console.log(`Adding ${ipRange} to IP whitelist for user ${userId}`);
 }
 
 export async function removeFromIpWhitelist(userId: string, ipRange: string): Promise<void> {
-  // In production, remove IP from whitelist
   console.log(`Removing ${ipRange} from IP whitelist for user ${userId}`);
 }
 
-// Audit Logs
 export interface AuditLog {
   id: string;
   user_id?: string;
@@ -205,7 +185,6 @@ export interface AuditLog {
 }
 
 export async function getAuditLogs(userId: string, limit = 50): Promise<AuditLog[]> {
-  // Mock data - in production, fetch from audit_logs table
   return [
     {
       id: 'log-1',
@@ -228,4 +207,4 @@ export async function getAuditLogs(userId: string, limit = 50): Promise<AuditLog
       created_at: '2025-01-01T00:00:00Z'
     }
   ];
-}</content>
+}

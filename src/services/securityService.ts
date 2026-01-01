@@ -22,24 +22,19 @@ export interface SecurityEvent {
   resolved: boolean;
 }
 
-// IP Whitelisting
 export async function getIpWhitelist(userId: string): Promise<string[]> {
-  // Mock data - in production, fetch from user security settings
   return ['192.168.1.0/24', '10.0.0.0/8'];
 }
 
 export async function addToIpWhitelist(userId: string, ipRange: string): Promise<void> {
-  // In production, validate IP range and add to whitelist
   console.log(`Adding ${ipRange} to whitelist for user ${userId}`);
 }
 
 export async function removeFromIpWhitelist(userId: string, ipRange: string): Promise<void> {
-  // In production, remove from whitelist
   console.log(`Removing ${ipRange} from whitelist for user ${userId}`);
 }
 
 export function isIpAllowed(ip: string, whitelist: string[]): boolean {
-  // Simple IP range checking - in production, use proper CIDR validation
   for (const range of whitelist) {
     if (range.includes(ip.split('.')[0] + '.' + ip.split('.')[1])) {
       return true;
@@ -48,9 +43,7 @@ export function isIpAllowed(ip: string, whitelist: string[]): boolean {
   return false;
 }
 
-// Login Activity Monitoring
 export async function getLoginHistory(userId: string, limit = 20): Promise<LoginAttempt[]> {
-  // Mock data - in production, fetch from login_attempts table
   return [
     {
       id: 'login-1',
@@ -88,21 +81,14 @@ export async function getLoginHistory(userId: string, limit = 20): Promise<Login
 }
 
 export async function logLoginAttempt(email: string, ip: string, userAgent: string, success: boolean, userId?: string): Promise<void> {
-  // In production, insert into login_attempts table
   console.log(`Login attempt: ${email} from ${ip}, success: ${success}`);
 
-  // Check for suspicious activity
   if (!success) {
     await checkForSuspiciousActivity(email, ip);
   }
 }
 
 async function checkForSuspiciousActivity(email: string, ip: string): Promise<void> {
-  // In production, check for patterns like:
-  // - Multiple failed attempts from same IP
-  // - Login from unusual location
-  // - Brute force attempts
-
   const recentAttempts = await getRecentFailedAttempts(email, ip);
   if (recentAttempts.length > 5) {
     await createSecurityAlert(email, 'brute_force_attempt', { ip, attempts: recentAttempts.length });
@@ -110,18 +96,14 @@ async function checkForSuspiciousActivity(email: string, ip: string): Promise<vo
 }
 
 async function getRecentFailedAttempts(email: string, ip: string): Promise<LoginAttempt[]> {
-  // Mock data - in production, query database
   return [];
 }
 
 async function createSecurityAlert(userEmail: string, type: string, details: any): Promise<void> {
-  // In production, create security alert and send notification
   console.log(`Security alert: ${type} for ${userEmail}`, details);
 }
 
-// Suspicious Activity Alerts
 export async function getSecurityAlerts(userId: string): Promise<SecurityEvent[]> {
-  // Mock data - in production, fetch from security_events table
   return [
     {
       id: 'alert-1',
@@ -136,11 +118,9 @@ export async function getSecurityAlerts(userId: string): Promise<SecurityEvent[]
 }
 
 export async function resolveSecurityAlert(alertId: string): Promise<void> {
-  // In production, mark alert as resolved
   console.log(`Resolving security alert ${alertId}`);
 }
 
-// Password Security Requirements
 export interface PasswordRequirements {
   min_length: number;
   require_uppercase: boolean;
@@ -178,9 +158,7 @@ export function validatePassword(password: string, requirements: PasswordRequire
   };
 }
 
-// Session Management
 export async function getActiveSessions(userId: string): Promise<any[]> {
-  // Mock data - in production, fetch from user_sessions table
   return [
     {
       id: 'session-1',
@@ -202,28 +180,22 @@ export async function getActiveSessions(userId: string): Promise<any[]> {
 }
 
 export async function revokeSession(sessionId: string): Promise<void> {
-  // In production, invalidate session
   console.log(`Revoking session ${sessionId}`);
 }
 
 export async function revokeAllSessions(userId: string, exceptCurrent = true): Promise<void> {
-  // In production, revoke all sessions except current
   console.log(`Revoking all sessions for user ${userId}, except current: ${exceptCurrent}`);
 }
 
-// Location-based restrictions
 export async function getLocationRestrictions(userId: string): Promise<string[]> {
-  // Mock data - allowed countries
   return ['US', 'CA', 'GB'];
 }
 
 export async function updateLocationRestrictions(userId: string, countries: string[]): Promise<void> {
-  // In production, update allowed countries
   console.log(`Updating location restrictions for user ${userId}:`, countries);
 }
 
 export function getLocationFromIp(ip: string): string {
-  // Mock geolocation - in production, use IP geolocation service
   if (ip.startsWith('192.168') || ip.startsWith('10.')) {
     return 'New York, US';
   }
@@ -238,4 +210,4 @@ export function getDeviceType(userAgent: string): string {
     return 'tablet';
   }
   return 'desktop';
-}</content>
+}

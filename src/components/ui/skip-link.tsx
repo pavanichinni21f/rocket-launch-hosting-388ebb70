@@ -18,4 +18,4 @@ export function SkipLink({ className, href, children, ...props }: SkipLinkProps)
       {children}
     </a>
   )
-}</content>
+}

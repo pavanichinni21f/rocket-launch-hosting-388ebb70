@@ -16,7 +16,6 @@ export interface InvoiceData {
 }
 
 export async function generateInvoice(orderId: string): Promise<InvoiceData> {
-  // Get order details
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .select('*')
@@ -27,19 +26,8 @@ export async function generateInvoice(orderId: string): Promise<InvoiceData> {
     throw new Error('Order not found');
   }
 
-  // Mock order items for now - in production, fetch from order_items table
-  const orderItems = [
-    {
-      service_name: 'VPS Hosting',
-      quantity: 1,
-      unit_price: order.amount_cents / 100,
-      total_price: order.amount_cents / 100
-    }
-  ];
-
-  // Calculate tax and totals
   const subtotal = order.amount_cents / 100;
-  const taxRate = 0.08; // 8% tax
+  const taxRate = 0.08;
   const taxAmount = subtotal * taxRate;
   const total = subtotal + taxAmount;
 
@@ -50,9 +38,9 @@ export async function generateInvoice(orderId: string): Promise<InvoiceData> {
     amount: total,
     currency: order.currency || 'USD',
     status: 'paid',
-    items: order.order_items || [],
+    items: [],
     createdAt: order.created_at,
-    dueDate: order.created_at, // For immediate payment
+    dueDate: order.created_at,
     taxAmount,
     discountAmount: 0
   };
@@ -64,7 +52,6 @@ export function generatePDFInvoice(invoice: InvoiceData): Promise<Blob> {
   return new Promise((resolve) => {
     const pdf = new jsPDF();
 
-    // Header
     pdf.setFontSize(20);
     pdf.text('KSFoundation Invoice', 20, 30);
 
@@ -73,12 +60,10 @@ export function generatePDFInvoice(invoice: InvoiceData): Promise<Blob> {
     pdf.text(`Date: ${new Date(invoice.createdAt).toLocaleDateString()}`, 20, 60);
     pdf.text(`Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}`, 20, 70);
 
-    // Customer info
     pdf.text('Bill To:', 20, 90);
     pdf.text('Customer Name', 20, 100);
     pdf.text('customer@example.com', 20, 110);
 
-    // Items table
     pdf.text('Description', 20, 140);
     pdf.text('Qty', 120, 140);
     pdf.text('Price', 150, 140);
@@ -93,7 +78,6 @@ export function generatePDFInvoice(invoice: InvoiceData): Promise<Blob> {
       yPos += 10;
     });
 
-    // Totals
     yPos += 10;
     pdf.text(`Subtotal: $${(invoice.amount - invoice.taxAmount).toFixed(2)}`, 150, yPos);
     yPos += 10;
@@ -101,7 +85,6 @@ export function generatePDFInvoice(invoice: InvoiceData): Promise<Blob> {
     yPos += 10;
     pdf.text(`Total: $${invoice.amount.toFixed(2)}`, 150, yPos);
 
-    // Footer
     pdf.setFontSize(10);
     pdf.text('Thank you for your business!', 20, 250);
     pdf.text('KSFoundation - Professional Hosting Solutions', 20, 260);
@@ -127,3 +110,4 @@ export async function downloadInvoice(orderId: string): Promise<void> {
     console.error('Failed to download invoice:', error);
     throw error;
   }
+}
