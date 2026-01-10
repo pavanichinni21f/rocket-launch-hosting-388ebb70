@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import DOMPurify from 'dompurify';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -13,6 +14,15 @@ import { Progress } from '../ui/progress';
 import { ChevronLeft, ChevronRight, Save, Upload, X } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+
+// Sanitize HTML to prevent XSS attacks
+const sanitizeHtml = (html: string): string => {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['b', 'i', 'u', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre'],
+    ALLOWED_ATTR: ['href', 'target', 'rel'],
+    ALLOW_DATA_ATTR: false,
+  });
+};
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -298,7 +308,7 @@ export const DataFormWizard: React.FC<DataFormWizardProps> = ({
                 {watchedValues.richContent && (
                   <div>
                     <strong>Rich Content:</strong>
-                    <div className="mt-1 text-sm" dangerouslySetInnerHTML={{ __html: watchedValues.richContent }} />
+                    <div className="mt-1 text-sm" dangerouslySetInnerHTML={{ __html: sanitizeHtml(watchedValues.richContent) }} />
                   </div>
                 )}
                 {attachments.length > 0 && (

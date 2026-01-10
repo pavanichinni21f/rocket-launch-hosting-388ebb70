@@ -1,151 +1,278 @@
-import { supabase } from '@/integrations/supabase/client';
+/**
+ * Cart Service - Local storage based cart management
+ * Uses localStorage for cart persistence since cart_items table doesn't exist in DB
+ */
+
+const CART_STORAGE_KEY = 'ks_hosting_cart';
+const DISCOUNT_STORAGE_KEY = 'ks_hosting_discount';
 
 export interface CartItem {
-  id?: string;
-  user_id: string;
-  service_id: string;
+  id: string;
+  serviceId: string;
+  serviceName: string;
   quantity: number;
-  addon_ids?: string[];
-  configuration?: Record<string, any>;
-  price_override?: number | null;
-  added_at?: string;
+  unitPrice: number;
+  totalPrice: number;
+  billingCycle: 'monthly' | 'yearly' | 'one-time';
+  configuration?: Record<string, unknown>;
+  selectedAddons?: string[];
 }
 
-export async function addToCart(userId: string, serviceId: string, config: Record<string, any> = {}, addons: string[] = []) {
-  // Get service pricing from database
-  const { data: service } = await supabase
-    .from('services')
-    .select('base_price, billing_cycle')
-    .eq('id', serviceId)
-    .single();
+export interface Cart {
+  items: CartItem[];
+  subtotal: number;
+  discount: number;
+  discountCode?: string;
+  total: number;
+  currency: string;
+}
 
-  if (!service) {
-    throw new Error('Service not found');
+export interface DiscountCode {
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  minimumOrder?: number;
+  expiresAt?: string;
+}
+
+// Mock services data (since services table doesn't exist)
+const mockServices: Record<string, { name: string; price: number; billingCycle: string }> = {
+  'starter': { name: 'Starter Plan', price: 499, billingCycle: 'monthly' },
+  'business': { name: 'Business Plan', price: 999, billingCycle: 'monthly' },
+  'enterprise': { name: 'Enterprise Plan', price: 2499, billingCycle: 'monthly' },
+  'domain-com': { name: '.com Domain', price: 999, billingCycle: 'yearly' },
+  'domain-in': { name: '.in Domain', price: 599, billingCycle: 'yearly' },
+  'ssl-basic': { name: 'Basic SSL', price: 1999, billingCycle: 'yearly' },
+  'ssl-wildcard': { name: 'Wildcard SSL', price: 4999, billingCycle: 'yearly' },
+  'shared-monthly': { name: 'Shared Hosting - Monthly', price: 499, billingCycle: 'monthly' },
+  'shared-annual': { name: 'Shared Hosting - Annual', price: 4999, billingCycle: 'yearly' },
+  'vps-monthly': { name: 'VPS - Monthly', price: 1999, billingCycle: 'monthly' },
+  'vps-annual': { name: 'VPS - Annual', price: 19999, billingCycle: 'yearly' },
+  'cloud-monthly': { name: 'Cloud - Monthly', price: 9999, billingCycle: 'monthly' },
+  'cloud-annual': { name: 'Cloud - Annual', price: 99999, billingCycle: 'yearly' },
+  'wordpress-monthly': { name: 'WordPress - Monthly', price: 999, billingCycle: 'monthly' },
+  'wordpress-annual': { name: 'WordPress - Annual', price: 9999, billingCycle: 'yearly' },
+};
+
+// Mock discount codes
+const mockDiscountCodes: DiscountCode[] = [
+  { code: 'WELCOME10', type: 'percentage', value: 10, minimumOrder: 500 },
+  { code: 'FLAT100', type: 'fixed', value: 100, minimumOrder: 1000 },
+  { code: 'SAVE20', type: 'percentage', value: 20, minimumOrder: 2000 },
+];
+
+function getCartFromStorage(): Cart {
+  if (typeof window === 'undefined') {
+    return {
+      items: [],
+      subtotal: 0,
+      discount: 0,
+      total: 0,
+      currency: 'INR',
+    };
   }
-
-  // Get addon pricing
-  let addonTotal = 0;
-  if (addons.length > 0) {
-    const { data: addonData } = await supabase
-      .from('service_addons')
-      .select('price')
-      .in('id', addons);
-
-    addonTotal = addonData?.reduce((sum, addon) => sum + (addon.price || 0), 0) || 0;
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error('Failed to parse cart from storage:', e);
   }
-
-  const unitPrice = service.base_price + addonTotal;
-  const totalPrice = unitPrice; // For one unit, can be multiplied by quantity later
-
-  const payload = {
-    user_id: userId,
-    service_id: serviceId,
-    quantity: 1,
-    configuration: config,
-    selected_addons: addons,
-    billing_cycle: service.billing_cycle,
-    unit_price: unitPrice,
-    total_price: totalPrice,
+  return {
+    items: [],
+    subtotal: 0,
+    discount: 0,
+    total: 0,
+    currency: 'INR',
   };
+}
 
-  // Upsert so user only has one line per service
-  const { data, error } = await supabase
-    .from('cart_items')
-    .upsert(payload, { onConflict: ['user_id', 'service_id', 'configuration', 'selected_addons', 'domain_name'] })
-    .select()
-    .limit(1);
+function saveCartToStorage(cart: Cart): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  } catch (e) {
+    console.error('Failed to save cart to storage:', e);
+  }
+}
 
-  if (error) {
-    throw new Error(`Failed to add to cart: ${error.message}`);
+function recalculateCart(cart: Cart): Cart {
+  const subtotal = cart.items.reduce((sum, item) => sum + item.totalPrice, 0);
+  const total = Math.max(0, subtotal - cart.discount);
+  return {
+    ...cart,
+    subtotal,
+    total,
+  };
+}
+
+export async function addToCart(
+  serviceId: string,
+  quantity: number = 1,
+  configuration?: Record<string, unknown>,
+  selectedAddons?: string[]
+): Promise<Cart> {
+  const cart = getCartFromStorage();
+  const service = mockServices[serviceId];
+  
+  if (!service) {
+    throw new Error(`Service not found: ${serviceId}`);
   }
 
-  return (data && data[0]) || payload;
-}
-
-export async function removeFromCart(userId: string, serviceId: string) {
-  const { error } = await supabase.from('cart_items').delete().eq('user_id', userId).eq('service_id', serviceId);
-  if (error) throw error;
-}
-
-export async function getCart(userId: string) {
-  const { data, error } = await supabase
-    .from('cart_items')
-    .select(`
-      *,
-      services:service_id (
-        name,
-        type,
-        base_price,
-        billing_cycle
-      )
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw new Error(`Failed to get cart: ${error.message}`);
+  const existingIndex = cart.items.findIndex(item => item.serviceId === serviceId);
+  
+  if (existingIndex >= 0) {
+    // Update existing item
+    cart.items[existingIndex].quantity += quantity;
+    cart.items[existingIndex].totalPrice = cart.items[existingIndex].unitPrice * cart.items[existingIndex].quantity;
+  } else {
+    // Add new item
+    const newItem: CartItem = {
+      id: `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      serviceId,
+      serviceName: service.name,
+      quantity,
+      unitPrice: service.price,
+      totalPrice: service.price * quantity,
+      billingCycle: service.billingCycle as 'monthly' | 'yearly' | 'one-time',
+      configuration,
+      selectedAddons,
+    };
+    cart.items.push(newItem);
   }
-  return (data || []) as CartItem[];
+
+  const updatedCart = recalculateCart(cart);
+  saveCartToStorage(updatedCart);
+  return updatedCart;
 }
 
-export async function clearCart(userId: string) {
-  const { error } = await supabase.from('cart_items').delete().eq('user_id', userId);
-  if (error) throw error;
+export async function removeFromCart(itemId: string): Promise<Cart> {
+  const cart = getCartFromStorage();
+  cart.items = cart.items.filter(item => item.id !== itemId);
+  const updatedCart = recalculateCart(cart);
+  saveCartToStorage(updatedCart);
+  return updatedCart;
 }
 
-export async function updateCartQuantity(userId: string, serviceId: string, quantity: number) {
-  const { data, error } = await supabase
-    .from('cart_items')
-    .update({ quantity })
-    .eq('user_id', userId)
-    .eq('service_id', serviceId)
-    .select()
-    .limit(1);
+export async function updateCartItemQuantity(itemId: string, quantity: number): Promise<Cart> {
+  const cart = getCartFromStorage();
+  const item = cart.items.find(i => i.id === itemId);
+  
+  if (item) {
+    if (quantity <= 0) {
+      return removeFromCart(itemId);
+    }
+    item.quantity = quantity;
+    item.totalPrice = item.unitPrice * quantity;
+  }
+  
+  const updatedCart = recalculateCart(cart);
+  saveCartToStorage(updatedCart);
+  return updatedCart;
+}
 
-  if (error) throw error;
-  return data && data[0];
+export async function getCart(): Promise<Cart> {
+  return getCartFromStorage();
+}
+
+export async function clearCart(): Promise<Cart> {
+  const emptyCart: Cart = {
+    items: [],
+    subtotal: 0,
+    discount: 0,
+    total: 0,
+    currency: 'INR',
+  };
+  saveCartToStorage(emptyCart);
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(DISCOUNT_STORAGE_KEY);
+  }
+  return emptyCart;
+}
+
+export async function applyDiscountCode(code: string): Promise<{ success: boolean; cart: Cart; message: string }> {
+  const cart = getCartFromStorage();
+  const discountCode = mockDiscountCodes.find(dc => dc.code.toUpperCase() === code.toUpperCase());
+
+  if (!discountCode) {
+    return { success: false, cart, message: 'Invalid discount code' };
+  }
+
+  if (discountCode.minimumOrder && cart.subtotal < discountCode.minimumOrder) {
+    return { 
+      success: false, 
+      cart, 
+      message: `Minimum order of ₹${discountCode.minimumOrder} required` 
+    };
+  }
+
+  if (discountCode.expiresAt && new Date(discountCode.expiresAt) < new Date()) {
+    return { success: false, cart, message: 'Discount code has expired' };
+  }
+
+  let discount = 0;
+  if (discountCode.type === 'percentage') {
+    discount = Math.round(cart.subtotal * (discountCode.value / 100));
+  } else {
+    discount = discountCode.value;
+  }
+
+  cart.discount = discount;
+  cart.discountCode = discountCode.code;
+  
+  const updatedCart = recalculateCart(cart);
+  saveCartToStorage(updatedCart);
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(DISCOUNT_STORAGE_KEY, discountCode.code);
+  }
+
+  return { 
+    success: true, 
+    cart: updatedCart, 
+    message: `Discount of ₹${discount} applied!` 
+  };
+}
+
+export async function removeDiscountCode(): Promise<Cart> {
+  const cart = getCartFromStorage();
+  cart.discount = 0;
+  cart.discountCode = undefined;
+  
+  const updatedCart = recalculateCart(cart);
+  saveCartToStorage(updatedCart);
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(DISCOUNT_STORAGE_KEY);
+  }
+  
+  return updatedCart;
+}
+
+export function getCartItemCount(): number {
+  const cart = getCartFromStorage();
+  return cart.items.reduce((sum, item) => sum + item.quantity, 0);
 }
 
 export function getServicePricingConfig() {
-  return {
-    'shared-monthly': { price: 4.99, name: 'Shared Hosting - Monthly' },
-    'shared-annual': { price: 49.99, name: 'Shared Hosting - Annual' },
-    'vps-monthly': { price: 19.99, name: 'VPS - Monthly' },
-    'vps-annual': { price: 199.99, name: 'VPS - Annual' },
-    'cloud-monthly': { price: 99.99, name: 'Cloud - Monthly' },
-    'cloud-annual': { price: 999.99, name: 'Cloud - Annual' },
-    'wordpress-monthly': { price: 9.99, name: 'WordPress - Monthly' },
-    'wordpress-annual': { price: 99.99, name: 'WordPress - Annual' },
-  } as Record<string, { price: number; name: string }>;
+  return mockServices;
 }
 
-export async function calculateCartTotal(userId: string, couponCode?: string) {
-  const items = await getCart(userId);
-  let subtotal = 0;
-
-  for (const item of items) {
-    subtotal += (item.total_price || 0) * (item.quantity || 1);
+export async function calculateCartTotal(couponCode?: string): Promise<{ subtotal: number; discount: number; total: number }> {
+  const cart = getCartFromStorage();
+  
+  if (couponCode && !cart.discountCode) {
+    await applyDiscountCode(couponCode);
+    const updatedCart = getCartFromStorage();
+    return {
+      subtotal: updatedCart.subtotal,
+      discount: updatedCart.discount,
+      total: updatedCart.total,
+    };
   }
-
-  // Handle discount codes
-  let discount = 0;
-  if (couponCode) {
-    const { data: coupon } = await supabase
-      .from('discount_codes')
-      .select('*')
-      .eq('code', couponCode.toUpperCase())
-      .eq('is_active', true)
-      .single();
-
-    if (coupon && subtotal >= (coupon.minimum_order || 0)) {
-      if (coupon.type === 'percentage') {
-        discount = subtotal * (coupon.value / 100);
-      } else if (coupon.type === 'fixed') {
-        discount = Math.min(coupon.value, subtotal);
-      }
-    }
-  }
-
-  const total = Math.max(0, subtotal - discount);
-  return { subtotal, discount, total };
+  
+  return {
+    subtotal: cart.subtotal,
+    discount: cart.discount,
+    total: cart.total,
+  };
 }
