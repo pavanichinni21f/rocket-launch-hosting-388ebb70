@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Check, Zap, Crown, Rocket, Server, Star } from 'lucide-react';
+import { Check, Zap, Crown, Rocket, Star } from 'lucide-react';
 
 const plans = [
   {
+    id: 'starter',
     name: 'Starter',
     icon: Zap,
-    originalPrice: 11.99,
-    price: 1.99,
+    originalPrice: 2499,
+    price: 999,
     period: '/month',
-    discount: '83% OFF',
+    discount: '60% OFF',
     popular: false,
     features: [
       '1 Website',
@@ -23,12 +25,13 @@ const plans = [
     color: 'secondary',
   },
   {
+    id: 'business',
     name: 'Business',
     icon: Rocket,
-    originalPrice: 15.99,
-    price: 2.99,
+    originalPrice: 4999,
+    price: 1999,
     period: '/month',
-    discount: '81% OFF',
+    discount: '60% OFF',
     popular: true,
     features: [
       '100 Websites',
@@ -44,15 +47,16 @@ const plans = [
     color: 'primary',
   },
   {
-    name: 'Cloud Pro',
+    id: 'enterprise',
+    name: 'Enterprise',
     icon: Crown,
-    originalPrice: 29.99,
-    price: 5.99,
+    originalPrice: 49999,
+    price: 19999,
     period: '/month',
-    discount: '80% OFF',
+    discount: '60% OFF',
     popular: false,
     features: [
-      '300 Websites',
+      'Unlimited Websites',
       '500 GB NVMe Storage',
       'Unlimited Bandwidth',
       'Free SSL Certificate',
@@ -166,24 +170,26 @@ const PlanComparison = () => {
                   <div className="mb-6">
                     <div className="flex items-baseline gap-2">
                       <span className="text-4xl md:text-5xl font-black text-foreground">
-                        ${plan.price}
+                        ₹{plan.price.toLocaleString('en-IN')}
                       </span>
                       <span className="text-muted-foreground">{plan.period}</span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      <span className="line-through">${plan.originalPrice}</span>
+                      <span className="line-through">₹{plan.originalPrice.toLocaleString('en-IN')}</span>
                       <span className="ml-2">when you renew</span>
                     </p>
                   </div>
 
                   {/* CTA Button */}
-                  <Button
-                    variant={isPopular ? 'rocket' : 'outline'}
-                    className="w-full mb-8"
-                    size="lg"
-                  >
-                    Get Started
-                  </Button>
+                  <Link to="/auth">
+                    <Button
+                      variant={isPopular ? 'rocket' : 'outline'}
+                      className="w-full mb-8"
+                      size="lg"
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
 
                   {/* Features */}
                   <ul className="space-y-3">

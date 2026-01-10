@@ -35,19 +35,25 @@ export interface DiscountCode {
   expiresAt?: string;
 }
 
-// Mock services data (since services table doesn't exist)
+// Mock services data with INR pricing (₹999 to ₹19,999 range)
 const mockServices: Record<string, { name: string; price: number; billingCycle: string }> = {
-  'starter': { name: 'Starter Plan', price: 499, billingCycle: 'monthly' },
-  'business': { name: 'Business Plan', price: 999, billingCycle: 'monthly' },
-  'enterprise': { name: 'Enterprise Plan', price: 2499, billingCycle: 'monthly' },
+  'starter': { name: 'Starter Plan', price: 999, billingCycle: 'monthly' },
+  'starter-monthly': { name: 'Starter Plan - Monthly', price: 999, billingCycle: 'monthly' },
+  'starter-yearly': { name: 'Starter Plan - Yearly', price: 9999, billingCycle: 'yearly' },
+  'business': { name: 'Business Plan', price: 1999, billingCycle: 'monthly' },
+  'business-monthly': { name: 'Business Plan - Monthly', price: 1999, billingCycle: 'monthly' },
+  'business-yearly': { name: 'Business Plan - Yearly', price: 19999, billingCycle: 'yearly' },
+  'enterprise': { name: 'Enterprise Plan', price: 19999, billingCycle: 'monthly' },
+  'enterprise-monthly': { name: 'Enterprise Plan - Monthly', price: 19999, billingCycle: 'monthly' },
+  'enterprise-yearly': { name: 'Enterprise Plan - Yearly', price: 199999, billingCycle: 'yearly' },
   'domain-com': { name: '.com Domain', price: 999, billingCycle: 'yearly' },
   'domain-in': { name: '.in Domain', price: 599, billingCycle: 'yearly' },
   'ssl-basic': { name: 'Basic SSL', price: 1999, billingCycle: 'yearly' },
   'ssl-wildcard': { name: 'Wildcard SSL', price: 4999, billingCycle: 'yearly' },
   'shared-monthly': { name: 'Shared Hosting - Monthly', price: 499, billingCycle: 'monthly' },
   'shared-annual': { name: 'Shared Hosting - Annual', price: 4999, billingCycle: 'yearly' },
-  'vps-monthly': { name: 'VPS - Monthly', price: 1999, billingCycle: 'monthly' },
-  'vps-annual': { name: 'VPS - Annual', price: 19999, billingCycle: 'yearly' },
+  'vps-monthly': { name: 'VPS - Monthly', price: 2999, billingCycle: 'monthly' },
+  'vps-annual': { name: 'VPS - Annual', price: 29999, billingCycle: 'yearly' },
   'cloud-monthly': { name: 'Cloud - Monthly', price: 9999, billingCycle: 'monthly' },
   'cloud-annual': { name: 'Cloud - Annual', price: 99999, billingCycle: 'yearly' },
   'wordpress-monthly': { name: 'WordPress - Monthly', price: 999, billingCycle: 'monthly' },

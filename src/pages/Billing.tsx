@@ -19,18 +19,25 @@ import {
   Rocket,
   Loader2,
   IndianRupee,
-  DollarSign,
+  Smartphone,
+  QrCode,
 } from 'lucide-react';
 import { getSubscription, getInvoices, createBillingPortalSession } from '@/services/paymentService';
 import { addToCart } from '@/services/cartService';
+import { 
+  initiateIndianPayment, 
+  redirectToPayU, 
+  openUPIApp, 
+  openGPay,
+  type PaymentProvider 
+} from '@/services/indianPaymentService';
 import { useNavigate } from 'react-router-dom';
 import type { Subscription, Invoice } from '@/services/paymentService';
 
 const plans = [
   {
-    name: 'Free',
-    priceUSD: 0,
-    priceINR: 0,
+    name: 'Free Trial',
+    price: 0,
     description: 'Perfect for getting started',
     features: [
       '1 Hosting Account',
@@ -45,8 +52,7 @@ const plans = [
   },
   {
     name: 'Starter',
-    priceUSD: 4.99,
-    priceINR: 399,
+    price: 999,
     description: 'Best for personal projects',
     features: [
       '3 Hosting Accounts',
@@ -63,8 +69,7 @@ const plans = [
   },
   {
     name: 'Business',
-    priceUSD: 9.99,
-    priceINR: 799,
+    price: 1999,
     description: 'For growing businesses',
     features: [
       'Unlimited Hosting Accounts',
@@ -83,8 +88,7 @@ const plans = [
   },
   {
     name: 'Enterprise',
-    priceUSD: 29.99,
-    priceINR: 2499,
+    price: 19999,
     description: 'For large scale operations',
     features: [
       'Everything in Business',
@@ -103,6 +107,17 @@ const plans = [
   },
 ];
 
+const paymentMethods: Array<{
+  id: PaymentProvider;
+  name: string;
+  icon: React.ReactNode;
+  description: string;
+}> = [
+  { id: 'payu', name: 'PayU', icon: <CreditCard className="h-5 w-5" />, description: 'Cards, Net Banking, Wallets' },
+  { id: 'upi', name: 'UPI', icon: <QrCode className="h-5 w-5" />, description: 'Any UPI App' },
+  { id: 'gpay', name: 'Google Pay', icon: <Smartphone className="h-5 w-5" />, description: 'Quick Payment' },
+];
+
 export default function Billing() {
   const { user, profile } = useAuth();
   const [searchParams] = useSearchParams();
@@ -110,8 +125,7 @@ export default function Billing() {
   const [invoiceList, setInvoiceList] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
-  const [paymentGateway, setPaymentGateway] = useState<'stripe' | 'payu'>('payu');
-  const [currency, setCurrency] = useState<'USD' | 'INR'>('INR');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentProvider>('payu');
   const navigate = useNavigate();
 
   // Check for payment status from URL
@@ -153,7 +167,7 @@ export default function Billing() {
   };
 
   const handleUpgrade = async (plan: typeof plans[0]) => {
-    if (!user) {
+    if (!user || !profile) {
       toast.error('You must be logged in to upgrade');
       return;
     }
@@ -163,13 +177,44 @@ export default function Billing() {
       return;
     }
 
-    // Instead of direct checkout, add to cart so users can purchase multiple items
+    setIsUpgrading(true);
+    
     try {
-      await addToCart(`${plan.planId}-monthly`);
-      toast.success(`${plan.name} added to cart`);
-      navigate('/cart');
+      const response = await initiateIndianPayment({
+        provider: selectedPaymentMethod,
+        amount: plan.price,
+        productInfo: `${plan.name} Plan - Monthly Subscription`,
+        customerName: profile.full_name || user.email?.split('@')[0] || 'Customer',
+        email: user.email || '',
+        phone: profile.phone || '',
+        userId: user.id,
+        plan: plan.planId,
+      });
+
+      if (!response.success) {
+        toast.error(response.error || 'Failed to initiate payment');
+        setIsUpgrading(false);
+        return;
+      }
+
+      // Handle different payment methods
+      if (selectedPaymentMethod === 'payu' && response.paymentUrl && response.params) {
+        redirectToPayU(response.paymentUrl, response.params);
+      } else if (selectedPaymentMethod === 'upi' && response.upiUrl) {
+        openUPIApp(response.upiUrl);
+        toast.info('Opening UPI app...');
+      } else if (selectedPaymentMethod === 'gpay' && response.gpayDeepLink) {
+        openGPay(response.gpayDeepLink);
+        toast.info('Opening Google Pay...');
+      } else if (response.mockMode) {
+        // Mock mode - simulate success
+        toast.success('Demo payment successful!');
+        navigate('/billing?payment=success&mock=true');
+      }
     } catch (e) {
-      toast.error('Failed to add to cart');
+      toast.error('Payment failed. Please try again.');
+    } finally {
+      setIsUpgrading(false);
     }
   };
 
@@ -192,8 +237,6 @@ export default function Billing() {
   };
 
   const currentPlan = profile?.subscription_plan || 'free';
-  const getPrice = (plan: typeof plans[0]) => currency === 'INR' ? plan.priceINR : plan.priceUSD;
-  const currencySymbol = currency === 'INR' ? '₹' : '$';
 
   return (
     <DashboardLayout>
@@ -206,24 +249,19 @@ export default function Billing() {
             </p>
           </div>
           
-          <div className="flex items-center gap-4">
-            <Tabs value={currency} onValueChange={(v) => setCurrency(v as 'USD' | 'INR')}>
-              <TabsList>
-                <TabsTrigger value="INR" className="flex items-center gap-1">
-                  <IndianRupee className="h-3 w-3" /> INR
-                </TabsTrigger>
-                <TabsTrigger value="USD" className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3" /> USD
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            
-            <Tabs value={paymentGateway} onValueChange={(v) => setPaymentGateway(v as 'stripe' | 'payu')}>
-              <TabsList>
-                <TabsTrigger value="payu">PayU</TabsTrigger>
-                <TabsTrigger value="stripe">Stripe</TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <div className="flex items-center gap-2 p-1 rounded-lg bg-muted">
+            {paymentMethods.map((method) => (
+              <Button
+                key={method.id}
+                variant={selectedPaymentMethod === method.id ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSelectedPaymentMethod(method.id)}
+                className="flex items-center gap-2"
+              >
+                {method.icon}
+                {method.name}
+              </Button>
+            ))}
           </div>
         </div>
 
@@ -288,7 +326,7 @@ export default function Billing() {
                 </CardHeader>
                 <CardContent className="text-center">
                   <div className="mb-6">
-                    <span className="text-4xl font-bold">{currencySymbol}{getPrice(plan)}</span>
+                    <span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span>
                     <span className="text-muted-foreground">/month</span>
                   </div>
                   <ul className="space-y-3 text-left mb-6">
@@ -308,9 +346,9 @@ export default function Billing() {
                     {isUpgrading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     {currentPlan === plan.planId
                       ? 'Current Plan'
-                      : plan.priceUSD === 0
+                      : plan.price === 0
                       ? 'Get Started'
-                      : 'Upgrade'}
+                      : `Pay ₹${plan.price.toLocaleString('en-IN')}`}
                   </Button>
                 </CardContent>
               </Card>
@@ -325,25 +363,29 @@ export default function Billing() {
               <CreditCard className="h-5 w-5" />
               Payment Method
             </CardTitle>
-            <CardDescription>Manage your payment information</CardDescription>
+            <CardDescription>Select your preferred payment method</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
-              <div className="flex items-center gap-4">
-                <div className="p-2 rounded bg-background">
-                  <CreditCard className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-medium">
-                    {paymentGateway === 'payu' ? 'PayU Payment Gateway' : 'Stripe Payment Gateway'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {paymentGateway === 'payu' 
-                      ? 'Pay with UPI, Cards, Net Banking, Wallets'
-                      : 'Pay with Credit/Debit Cards'}
-                  </p>
-                </div>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {paymentMethods.map((method) => (
+                <button
+                  key={method.id}
+                  onClick={() => setSelectedPaymentMethod(method.id)}
+                  className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${
+                    selectedPaymentMethod === method.id 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border hover:border-muted-foreground/50'
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg ${selectedPaymentMethod === method.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                    {method.icon}
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">{method.name}</p>
+                    <p className="text-sm text-muted-foreground">{method.description}</p>
+                  </div>
+                </button>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -381,7 +423,7 @@ export default function Billing() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="font-medium">{currencySymbol}{(invoice.amount / 100).toFixed(2)}</span>
+                      <span className="font-medium">₹{(invoice.amount / 100).toLocaleString('en-IN')}</span>
                       <Badge variant="outline" className={invoice.status === 'paid' ? 'text-success border-success' : 'text-destructive border-destructive'}>
                         {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                       </Badge>
