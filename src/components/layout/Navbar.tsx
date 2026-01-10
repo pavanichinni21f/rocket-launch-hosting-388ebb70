@@ -64,12 +64,16 @@ const Navbar = () => {
               <MessageCircle className="h-4 w-4" />
               <span>24/7 Support</span>
             </button>
-            <Button variant="ghost" size="sm">
-              Log In
-            </Button>
-            <Button variant="rocket" size="sm">
-              Get Started
-            </Button>
+            <Link to="/auth">
+              <Button variant="ghost" size="sm">
+                Log In
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button variant="rocket" size="sm">
+                Get Started
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -88,12 +92,16 @@ const Navbar = () => {
                   {link.hasDropdown && <ChevronDown className="h-4 w-4" />}
                 </Link>)}
               <hr className="my-2 border-border" />
-              <Button variant="ghost" className="justify-start">
-                Log In
-              </Button>
-              <Button variant="rocket">
-                Get Started
-              </Button>
+              <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  Log In
+                </Button>
+              </Link>
+              <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="rocket" className="w-full">
+                  Get Started
+                </Button>
+              </Link>
             </div>
           </div>
         </div>}
