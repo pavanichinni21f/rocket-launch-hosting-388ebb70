@@ -199,20 +199,29 @@ serve(async (req) => {
         console.error("Order update error:", updateError);
       }
 
-      // If payment successful, update user's subscription
+      // If payment successful, update user's subscription and send email
       if (status === "success") {
         const { data: orderData } = await supabase
           .from("orders")
-          .select("user_id, plan")
+          .select("user_id, plan, amount_cents")
           .eq("id", orderId)
           .single();
 
         if (orderData) {
+          // Get user profile for email
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("email, full_name, subscription_plan")
+            .eq("id", orderData.user_id)
+            .single();
+
+          // Update subscription plan
           await supabase
             .from("profiles")
             .update({ subscription_plan: orderData.plan })
             .eq("id", orderData.user_id);
 
+          // Log activity
           await supabase
             .from("activity_log")
             .insert({
@@ -221,6 +230,7 @@ serve(async (req) => {
               details: { plan: orderData.plan, provider, txnId },
             });
 
+          // Create notification
           await supabase
             .from("notifications")
             .insert({
@@ -229,6 +239,58 @@ serve(async (req) => {
               title: "Payment Successful",
               message: `Your subscription has been upgraded to ${orderData.plan} plan via ${provider}.`,
             });
+
+          // Send payment confirmation email via send-email function
+          if (profile?.email) {
+            try {
+              const emailResponse = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                },
+                body: JSON.stringify({
+                  to: profile.email,
+                  subject: `Payment Confirmed - Order #${orderId.slice(0, 8)}`,
+                  html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                      <div style="background: linear-gradient(135deg, #FF6B35, #FF8F65); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                        <h1 style="color: white; margin: 0;">Payment Successful! 🎉</h1>
+                      </div>
+                      <div style="padding: 30px; background: #ffffff; border: 1px solid #e0e0e0;">
+                        <p style="font-size: 16px;">Hi ${profile.full_name || 'Customer'},</p>
+                        <p>Thank you for your payment! Your subscription has been activated.</p>
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                          <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                              <td style="padding: 8px 0; color: #666;">Order ID:</td>
+                              <td style="padding: 8px 0; text-align: right; font-weight: bold;">#${orderId.slice(0, 8)}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; color: #666;">Plan:</td>
+                              <td style="padding: 8px 0; text-align: right; font-weight: bold;">${orderData.plan}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; color: #666;">Amount:</td>
+                              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #28a745;">₹${(orderData.amount_cents / 100).toLocaleString('en-IN')}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; color: #666;">Payment Method:</td>
+                              <td style="padding: 8px 0; text-align: right;">${provider.toUpperCase()}</td>
+                            </tr>
+                          </table>
+                        </div>
+                        <p>You now have access to all ${orderData.plan} features. Enjoy!</p>
+                      </div>
+                    </div>
+                  `,
+                }),
+              });
+              console.log('Payment confirmation email sent:', emailResponse.status);
+            } catch (emailError) {
+              console.error('Failed to send payment email:', emailError);
+            }
+          }
         }
       }
 
