@@ -29,6 +29,9 @@ import Orders from '@/pages/Orders';
 import Invoices from '@/pages/Invoices';
 import HostingControlPanel from '@/pages/HostingControlPanel';
 import RequireRole from '@/components/auth/RequireRole';
+import Analytics from '@/pages/Analytics';
+import Affiliate from '@/pages/Affiliate';
+import Automation from '@/pages/Automation';
 
 const queryClient = new QueryClient();
 
@@ -49,6 +52,8 @@ const App = () => (
             <Route path="/domains" element={<Domains />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            
+            {/* Admin Routes */}
             <Route path="/admin" element={<ProtectedRoute><RequireRole role="admin"><Admin /></RequireRole></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><RequireRole role="admin"><Orders /></RequireRole></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><RequireRole role="admin"><Invoices /></RequireRole></ProtectedRoute>} />
@@ -65,6 +70,11 @@ const App = () => (
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
             <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+            
+            {/* New Protected Routes */}
+            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+            <Route path="/affiliate" element={<ProtectedRoute><Affiliate /></ProtectedRoute>} />
+            <Route path="/automation" element={<ProtectedRoute><Automation /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

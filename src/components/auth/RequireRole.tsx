@@ -1,23 +1,85 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
-export default function RequireRole({ role, children }: { role: string; children: ReactNode }) {
-  const { user, profile, loading } = useAuth();
+interface RequireRoleProps {
+  role: string;
+  children: ReactNode;
+  fallback?: ReactNode;
+}
 
-  if (loading) return null;
+export default function RequireRole({ role, children, fallback }: RequireRoleProps) {
+  const { user, loading: authLoading } = useAuth();
+  const [hasRole, setHasRole] = useState<boolean | null>(null);
+  const [isChecking, setIsChecking] = useState(true);
 
-  // If profile has role_id or role field, check it; fallback: allow if email is admin@example.com
-  const userRole = (profile as any)?.role || (profile as any)?.role_id || null;
-  const isAdminByEmail = user?.email === 'admin@example.com';
+  useEffect(() => {
+    async function checkUserRole() {
+      if (!user) {
+        setHasRole(false);
+        setIsChecking(false);
+        return;
+      }
 
-  if (isAdminByEmail) return <>{children}</>;
-  if (!user) return <Navigate to="/auth" replace />;
-  if (!userRole) return <Navigate to="/" replace />;
+      try {
+        // Query user_roles table to check if user has the required role
+        const { data: roles, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
 
-  // simple check: role string equality or role contains
-  if (typeof userRole === 'string' && userRole === role) return <>{children}</>;
-  if (Array.isArray(userRole) && userRole.includes(role)) return <>{children}</>;
+        if (error) {
+          console.error('Error checking user role:', error);
+          setHasRole(false);
+          setIsChecking(false);
+          return;
+        }
 
-  return <Navigate to="/" replace />;
+        // Check if user has the required role
+        const userRoles = roles?.map(r => r.role) || [];
+        const hasRequiredRole = userRoles.includes(role as 'user' | 'admin' | 'owner');
+        
+        // Owner role also has admin access
+        const hasOwnerAccess = role === 'admin' && userRoles.includes('owner');
+        
+        setHasRole(hasRequiredRole || hasOwnerAccess);
+      } catch (err) {
+        console.error('Error in role check:', err);
+        setHasRole(false);
+      } finally {
+        setIsChecking(false);
+      }
+    }
+
+    if (!authLoading) {
+      checkUserRole();
+    }
+  }, [user, role, authLoading]);
+
+  // Show loading state while checking auth and role
+  if (authLoading || isChecking) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Not logged in - redirect to auth
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // User doesn't have the required role
+  if (!hasRole) {
+    if (fallback) {
+      return <>{fallback}</>;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // User has the required role - render children
+  return <>{children}</>;
 }

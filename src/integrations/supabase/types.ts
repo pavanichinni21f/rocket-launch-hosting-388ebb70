@@ -96,6 +96,42 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          recipient_email: string
+          sent_at: string | null
+          status: string | null
+          subject: string | null
+          template_name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          sent_at?: string | null
+          status?: string | null
+          subject?: string | null
+          template_name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          sent_at?: string | null
+          status?: string | null
+          subject?: string | null
+          template_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       hosting_account_members: {
         Row: {
           hosting_account_id: string
