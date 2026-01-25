@@ -21,7 +21,6 @@ import WordPressHosting from "./pages/WordPressHosting";
 import CloudHosting from "./pages/CloudHosting";
 import Domains from "./pages/Domains";
 import NotFound from "./pages/NotFound";
-import Footer from '@/components/layout/Footer';
 import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import Admin from '@/pages/Admin';
@@ -32,6 +31,16 @@ import RequireRole from '@/components/auth/RequireRole';
 import Analytics from '@/pages/Analytics';
 import Affiliate from '@/pages/Affiliate';
 import Automation from '@/pages/Automation';
+import Pricing from '@/pages/Pricing';
+import Features from '@/pages/Features';
+import About from '@/pages/About';
+import Contact from '@/pages/Contact';
+import Blog from '@/pages/Blog';
+import Status from '@/pages/Status';
+import Hosting from '@/pages/Hosting';
+import RefundPolicy from '@/pages/RefundPolicy';
+import CookiePolicy from '@/pages/CookiePolicy';
+import ForgotPassword from '@/pages/ForgotPassword';
 
 const queryClient = new QueryClient();
 
@@ -43,15 +52,27 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Public Routes */}
+            {/* Public Marketing Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/status" element={<Status />} />
+            <Route path="/hosting" element={<Hosting />} />
             <Route path="/vps" element={<VPSHosting />} />
             <Route path="/wordpress" element={<WordPressHosting />} />
             <Route path="/cloud" element={<CloudHosting />} />
             <Route path="/domains" element={<Domains />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            
+            {/* Legal Pages */}
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<ProtectedRoute><RequireRole role="admin"><Admin /></RequireRole></ProtectedRoute>} />
@@ -70,15 +91,13 @@ const App = () => (
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
             <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
-            
-            {/* New Protected Routes */}
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/affiliate" element={<ProtectedRoute><Affiliate /></ProtectedRoute>} />
             <Route path="/automation" element={<ProtectedRoute><Automation /></ProtectedRoute>} />
+            <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <Footer />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
