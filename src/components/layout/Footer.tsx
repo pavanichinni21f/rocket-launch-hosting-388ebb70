@@ -5,19 +5,46 @@ import ksLogo from '@/assets/kslogo.png';
 const footerLinks = {
   hosting: {
     title: 'Hosting',
-    links: ['Web Hosting', 'WordPress Hosting', 'Cloud Hosting', 'VPS Hosting', 'Dedicated Servers', 'Email Hosting'],
+    links: [
+      { label: 'Web Hosting', href: '/hosting' },
+      { label: 'WordPress Hosting', href: '/wordpress' },
+      { label: 'Cloud Hosting', href: '/cloud' },
+      { label: 'VPS Hosting', href: '/vps' },
+      { label: 'Dedicated Servers', href: '/hosting' },
+      { label: 'Email Hosting', href: '/hosting' },
+    ],
   },
   domains: {
     title: 'Domains',
-    links: ['Domain Search', 'Domain Transfer', 'Free Domain', 'WHOIS Lookup', 'Domain Pricing'],
+    links: [
+      { label: 'Domain Search', href: '/domains' },
+      { label: 'Domain Transfer', href: '/domains' },
+      { label: 'Free Domain', href: '/domains' },
+      { label: 'WHOIS Lookup', href: '/domains' },
+      { label: 'Domain Pricing', href: '/pricing' },
+    ],
   },
   company: {
     title: 'Company',
-    links: ['About Us', 'Careers', 'Press', 'Blog', 'Affiliates', 'Contact'],
+    links: [
+      { label: 'About Us', href: '/about' },
+      { label: 'Careers', href: '/about' },
+      { label: 'Press', href: '/about' },
+      { label: 'Blog', href: '/blog' },
+      { label: 'Affiliates', href: '/affiliate' },
+      { label: 'Contact', href: '/contact' },
+    ],
   },
   support: {
     title: 'Support',
-    links: ['Help Center', 'Community', 'Status', 'Report Abuse', 'Terms of Service', 'Privacy Policy'],
+    links: [
+      { label: 'Help Center', href: '/support' },
+      { label: 'Community', href: '/support' },
+      { label: 'Status', href: '/status' },
+      { label: 'Report Abuse', href: '/contact' },
+      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Privacy Policy', href: '/privacy' },
+    ],
   },
 };
 
@@ -32,7 +59,7 @@ const Footer = () => {
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img 
                 src={ksLogo} 
-                alt="KSFoundation" 
+                alt="Rocket Launchpad" 
                 className="h-12 w-12 object-contain"
               />
               <span className="text-xl font-bold">
@@ -63,13 +90,13 @@ const Footer = () => {
               <h4 className="font-semibold text-foreground mb-4">{section.title}</h4>
               <ul className="space-y-3">
                 {section.links.map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
+                  <li key={link.label}>
+                    <Link
+                      to={link.href}
                       className="text-sm text-muted-foreground hover:text-primary transition-colors"
                     >
-                      {link}
-                    </a>
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -85,8 +112,8 @@ const Footer = () => {
           <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
             <Link to="/terms" className="hover:text-primary transition-colors">Terms</Link>
             <Link to="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
-            <a href="#" className="hover:text-primary transition-colors">Cookies</a>
-            <a href="#" className="hover:text-primary transition-colors">GDPR</a>
+            <Link to="/cookie-policy" className="hover:text-primary transition-colors">Cookies</Link>
+            <Link to="/privacy" className="hover:text-primary transition-colors">GDPR</Link>
           </div>
         </div>
       </div>

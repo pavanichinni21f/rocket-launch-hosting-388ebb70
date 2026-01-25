@@ -1,138 +1,111 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.0';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') || '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-);
-
-interface OrderItem {
-  name: string;
-  price: number;
-  quantity?: number;
-  type?: string;
+async function verifyJWT(token: string, supabaseUrl: string): Promise<{ sub: string } | null> {
+  try {
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "");
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return null;
+    return { sub: user.id };
+  } catch (err) {
+    return null;
+  }
 }
 
-interface CreateOrderRequest {
-  userId?: string;
-  items: OrderItem[];
-  amount?: number;
-  currency?: string;
-  billingCycle?: string;
-  plan?: string;
-}
-
-Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // ========== JWT AUTHENTICATION ==========
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      console.error('Missing or invalid Authorization header');
+    // Verify JWT
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Unauthorized: Missing token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create authenticated client
-    const authClient = createClient(
-      Deno.env.get('SUPABASE_URL') || '',
-      Deno.env.get('SUPABASE_ANON_KEY') || '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const token = authHeader.substring(7);
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const user = await verifyJWT(token, SUPABASE_URL!);
 
-    // Verify JWT and get user claims
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await authClient.auth.getUser(token);
-    
-    if (claimsError || !claimsData?.user) {
-      console.error('JWT verification failed:', claimsError?.message);
+    if (!user) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Unauthorized: Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const authenticatedUserId = claimsData.user.id;
-    console.log('Authenticated user:', authenticatedUserId);
+    const body = await req.json();
+    const { items, amount, currency = "INR" } = body;
 
-    // ========== PROCESS ORDER ==========
-    const body: CreateOrderRequest = await req.json().catch(() => ({}));
-    const items = Array.isArray(body.items) ? body.items : [];
-    const amount = Number(body.amount || items.reduce((s: number, it: OrderItem) => s + (it.price || 0) * (it.quantity || 1), 0));
-
-    // Security: Use authenticated user ID, not the one from request body
-    const userId = authenticatedUserId;
-
-    // Validate order data
-    if (amount <= 0) {
+    // Verify user ownership
+    if (body.user_id && body.user_id !== user.sub) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Invalid order amount' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create order in database
-    const orderData = {
-      user_id: userId,
-      amount_cents: Math.round(amount * 100),
-      currency: body.currency || 'INR',
-      status: 'pending',
-      billing_cycle: body.billingCycle || 'monthly',
-      plan: body.plan || 'starter',
-    };
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
+    // Create order
     const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert(orderData)
+      .from("orders")
+      .insert({
+        user_id: user.sub,
+        amount: amount,
+        currency: currency,
+        status: "pending",
+        items: items,
+      })
       .select()
       .single();
 
     if (orderError) {
-      console.error('Order creation error:', orderError);
-      return new Response(
-        JSON.stringify({ ok: false, error: 'Failed to create order' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      throw new Error(`Order creation failed: ${orderError.message}`);
+    }
+
+    // Create order items
+    if (items && items.length > 0) {
+      await supabase.from("order_items").insert(
+        items.map((item: any) => ({
+          order_id: order.id,
+          service_id: item.service_id,
+          service_name: item.service_name,
+          service_type: item.service_type,
+          quantity: item.quantity || 1,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+        }))
       );
     }
 
-    console.log('Order created:', order.id);
-
     // Log activity
-    await supabase.from('activity_log').insert({
-      user_id: userId,
-      action: 'order_created',
-      details: { order_id: order.id, amount, items_count: items.length },
+    await supabase.from("activity_log").insert({
+      user_id: user.sub,
+      action: "order_created",
+      details: { order_id: order.id, amount: amount },
     });
 
     return new Response(
-      JSON.stringify({ 
-        ok: true, 
-        order: {
-          id: order.id,
-          user_id: order.user_id,
-          amount: order.amount_cents / 100,
-          currency: order.currency,
-          status: order.status,
-          created_at: order.created_at,
-        }
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, order }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error('Unexpected error:', err);
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("Order creation error:", errorMessage);
     return new Response(
-      JSON.stringify({ ok: false, error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

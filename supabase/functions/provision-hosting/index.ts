@@ -1,163 +1,102 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.0';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') || '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-);
-
-interface ProvisionRequest {
-  planId?: string;
-  provider?: string;
-  name?: string;
-  domain?: string;
+async function verifyJWT(token: string, supabaseUrl: string): Promise<{ sub: string } | null> {
+  try {
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "");
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return null;
+    return { sub: user.id };
+  } catch (err) {
+    return null;
+  }
 }
 
-Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // ========== JWT AUTHENTICATION ==========
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      console.error('Missing or invalid Authorization header');
+    // Verify JWT
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Unauthorized: Missing token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create authenticated client
-    const authClient = createClient(
-      Deno.env.get('SUPABASE_URL') || '',
-      Deno.env.get('SUPABASE_ANON_KEY') || '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const token = authHeader.substring(7);
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const user = await verifyJWT(token, SUPABASE_URL!);
 
-    // Verify JWT and get user
-    const token = authHeader.replace('Bearer ', '');
-    const { data: userData, error: authError } = await authClient.auth.getUser(token);
-    
-    if (authError || !userData?.user) {
-      console.error('JWT verification failed:', authError?.message);
+    if (!user) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Unauthorized: Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userId = userData.user.id;
-    console.log('Provisioning hosting for user:', userId);
+    const body = await req.json();
+    const { order_id, plan, domain } = body;
 
-    // ========== PROCESS PROVISIONING REQUEST ==========
-    const body: ProvisionRequest = await req.json().catch(() => ({}));
-    const planId = body.planId || 'starter';
-    const provider = body.provider || 'shared';
-    const accountName = body.name || `hosting-${Date.now()}`;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Validate plan
-    const validPlans = ['free', 'starter', 'business', 'enterprise'];
-    if (!validPlans.includes(planId)) {
+    // Verify order belongs to user
+    const { data: order } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", order_id)
+      .single();
+
+    if (!order || order.user_id !== user.sub) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Invalid plan selected' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check user's current hosting account count
-    const { count: existingCount } = await supabase
-      .from('hosting_accounts')
-      .select('*', { count: 'exact', head: true })
-      .eq('owner_id', userId);
-
-    // Plan limits
-    const planLimits: Record<string, number> = {
-      free: 1,
-      starter: 3,
-      business: 10,
-      enterprise: 999,
-    };
-
-    const currentLimit = planLimits[planId] || 1;
-    if ((existingCount || 0) >= currentLimit) {
-      return new Response(
-        JSON.stringify({ ok: false, error: `Plan limit reached. Upgrade to create more hosting accounts.` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Order not found or unauthorized" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Create hosting account
-    const hostingData = {
-      owner_id: userId,
-      name: accountName,
-      plan: planId,
-      domain: body.domain || null,
-      server_location: 'us-east-1',
-      is_active: true,
-      storage_used_gb: 0,
-      bandwidth_used_gb: 0,
-    };
-
-    const { data: hosting, error: hostingError } = await supabase
-      .from('hosting_accounts')
-      .insert(hostingData)
+    const { data: account, error: accountError } = await supabase
+      .from("hosting_accounts")
+      .insert({
+        user_id: user.sub,
+        provider: "aws", // Default provider
+        plan: plan,
+        status: "provisioning",
+        metadata: { domain, order_id },
+      })
       .select()
       .single();
 
-    if (hostingError) {
-      console.error('Hosting creation error:', hostingError);
-      return new Response(
-        JSON.stringify({ ok: false, error: 'Failed to provision hosting account' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (accountError) {
+      throw new Error(`Provisioning failed: ${accountError.message}`);
     }
 
-    console.log('Hosting account created:', hosting.id);
-
     // Log activity
-    await supabase.from('activity_log').insert({
-      user_id: userId,
-      hosting_account_id: hosting.id,
-      action: 'hosting_provisioned',
-      details: { plan: planId, provider, name: accountName },
-    });
-
-    // Create notification
-    await supabase.from('notifications').insert({
-      user_id: userId,
-      title: 'Hosting Account Created',
-      message: `Your ${planId} hosting account "${accountName}" is now active.`,
-      type: 'success',
-      action_url: `/hosting/control-panel/${hosting.id}`,
+    await supabase.from("activity_log").insert({
+      user_id: user.sub,
+      action: "hosting_provisioned",
+      details: { account_id: account.id, plan, domain },
     });
 
     return new Response(
-      JSON.stringify({ 
-        ok: true, 
-        hosting: {
-          id: hosting.id,
-          name: hosting.name,
-          plan: hosting.plan,
-          domain: hosting.domain,
-          status: hosting.is_active ? 'active' : 'inactive',
-          server_location: hosting.server_location,
-          created_at: hosting.created_at,
-        }
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, account }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error('Unexpected error:', err);
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("Provisioning error:", errorMessage);
     return new Response(
-      JSON.stringify({ ok: false, error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

@@ -16,6 +16,23 @@ interface PayUPaymentRequest {
   plan: string;
 }
 
+// JWT verification helper
+async function verifyJWT(token: string, supabaseUrl: string): Promise<{ sub: string; email: string } | null> {
+  try {
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "");
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return null;
+    }
+    
+    return { sub: user.id, email: user.email || "" };
+  } catch (err) {
+    console.error("JWT verification error:", err);
+    return null;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -23,9 +40,28 @@ serve(async (req) => {
   }
 
   try {
+    // Extract and verify JWT from Authorization header
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const user = await verifyJWT(token, SUPABASE_URL!);
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY");
     const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT");
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
@@ -36,13 +72,31 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-    const { action, ...body } = await req.json();
+    // Verify user ID matches token
+    const body = await req.json();
+    const { action, ...requestBody } = body;
+    const requestUserId = requestBody.userId;
 
-    console.log("PayU payment action:", action);
+    if (requestUserId && requestUserId !== user.sub) {
+      console.error("User ID mismatch - potential security issue");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - user ID mismatch" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     if (action === "initiate") {
-      const { amount, productInfo, firstName, email, phone, userId, plan } = body as PayUPaymentRequest;
+      const { amount, productInfo, firstName, email, phone, userId, plan } = requestBody as PayUPaymentRequest;
+
+      // Double-check authorization
+      if (userId !== user.sub) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       // Generate unique transaction ID
       const txnid = `TXN${Date.now()}${Math.random().toString(36).substring(7)}`;
@@ -114,7 +168,7 @@ serve(async (req) => {
     }
 
     if (action === "verify") {
-      const { txnid, status, mihpayid, hash: receivedHash, amount, productinfo, firstname, email, udf1 } = body;
+      const { txnid, status, mihpayid, hash: receivedHash, amount, productinfo, firstname, email, udf1 } = requestBody;
 
       // Verify hash (reverse hash for response)
       const reverseHashString = `${PAYU_MERCHANT_SALT}|${status}|||||||||||${email}|${firstname}|${productinfo}|${amount}|${txnid}|${PAYU_MERCHANT_KEY}`;
@@ -137,51 +191,60 @@ serve(async (req) => {
       const orderId = udf1;
       const newStatus = status === "success" ? "paid" : "failed";
 
-      const { error: updateError } = await supabase
+      const { data: orderData, error: updateError } = await supabase
         .from("orders")
         .update({
           status: newStatus,
           paid_at: status === "success" ? new Date().toISOString() : null,
         })
-        .eq("id", orderId);
+        .eq("id", orderId)
+        .select()
+        .single();
 
       if (updateError) {
         console.error("Order update error:", updateError);
+        return new Response(
+          JSON.stringify({ error: "Failed to update order" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify the order belongs to the authenticated user
+      if (orderData.user_id !== user.sub) {
+        console.error("Order user mismatch - potential security issue");
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
 
       // If payment successful, update user's subscription
       if (status === "success") {
-        const { data: orderData } = await supabase
-          .from("orders")
-          .select("user_id, plan")
-          .eq("id", orderId)
+        const { data: updatedProfile } = await supabase
+          .from("profiles")
+          .update({ subscription_plan: orderData.plan })
+          .eq("id", orderData.user_id)
+          .select()
           .single();
 
-        if (orderData) {
-          await supabase
-            .from("profiles")
-            .update({ subscription_plan: orderData.plan })
-            .eq("id", orderData.user_id);
+        // Log activity
+        await supabase
+          .from("activity_log")
+          .insert({
+            user_id: orderData.user_id,
+            action: "subscription_upgraded",
+            details: { plan: orderData.plan, payment_id: mihpayid },
+          });
 
-          // Log activity
-          await supabase
-            .from("activity_log")
-            .insert({
-              user_id: orderData.user_id,
-              action: "subscription_upgraded",
-              details: { plan: orderData.plan, payment_id: mihpayid },
-            });
-
-          // Create notification
-          await supabase
-            .from("notifications")
-            .insert({
-              user_id: orderData.user_id,
-              type: "payment",
-              title: "Payment Successful",
-              message: `Your subscription has been upgraded to ${orderData.plan} plan.`,
-            });
-        }
+        // Create notification
+        await supabase
+          .from("notifications")
+          .insert({
+            user_id: orderData.user_id,
+            type: "payment",
+            title: "Payment Successful",
+            message: `Your subscription has been upgraded to ${orderData.plan} plan.`,
+          });
       }
 
       console.log("PayU payment verified:", { orderId, status: newStatus });

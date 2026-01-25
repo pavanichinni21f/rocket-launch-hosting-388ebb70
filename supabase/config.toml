@@ -1,1 +1,68 @@
+# Supabase Local Development Configuration
 project_id = "gmthkhlrhlukwczlaian"
+
+[api]
+enabled = true
+max_body_size = "20mb"
+
+[db]
+port = 5432
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[realtime]
+enabled = true
+max_bytes_per_second = 1000000
+
+[storage]
+file_size_limit = 52428800
+
+[auth]
+enable_signup = true
+enable_anonymous_signups = false
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_persistent_links = false
+mfa_phone_enabled = false
+phone_test_otp = "123456"
+sms_autoconfirm = false
+sms_max_frequency = 9223372036854775807
+sms_otp_exp = 600
+sms_provider = "twilio"
+username_case_insensitive = false
+webhook_auth_events = []
+webhook_custom_claim_check_enabled = false
+webhook_logout_enabled = false
+webhook_mfa_enabled = false
+webhook_pool_size = 10
+webhook_timeout_sec = 5
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+max_frequency = 900
+otp_exp = 3600
+otp_length = 6
+
+[auth.sms]
+max_frequency = 9223372036854775807
+otp_exp = 600
+otp_length = 6
+
+[functions]
+nodejs_version = "18"
+verify_jwt = true
+
+[[functions.*/]]
+key = "*"
+verify_jwt = true
+
+[vector]
+enabled = false
+
+[analytics]
+enabled = false
