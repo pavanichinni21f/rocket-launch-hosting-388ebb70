@@ -30,14 +30,41 @@ serve(async (req) => {
     const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+
+    // JWT Authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - No valid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const authSupabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: claimsError } = await authSupabase.auth.getClaims(token);
+    
+    if (claimsError || !claims?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const authenticatedUserId = claims.claims.sub;
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
     const { action, ...body } = await req.json();
 
-    console.log("Indian payment action:", action, "provider:", body.provider);
+    console.log("Indian payment action:", action, "provider:", body.provider, "user:", authenticatedUserId);
 
     if (action === "initiate") {
-      const { provider, amount, productInfo, customerName, email, phone, userId, plan, upiId } = body as PaymentRequest;
+      const { provider, amount, productInfo, customerName, email, phone, plan, upiId } = body as PaymentRequest;
+      const userId = authenticatedUserId; // Use authenticated user, not client-provided
       
       // Generate unique transaction ID
       const txnId = `TXN${Date.now()}${Math.random().toString(36).substring(7)}`;
