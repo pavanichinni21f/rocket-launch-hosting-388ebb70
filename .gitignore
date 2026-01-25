@@ -11,6 +11,29 @@ node_modules
 dist
 dist-ssr
 *.local
+bun.lock*
+
+# Environment variables & security
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+
+# API Keys & Credentials (DO NOT COMMIT)
+.env.*.keys
+secrets/
+credentials/
+*.pem
+*.key
+*.cert
+private_keys/
+
+# Sensitive Supabase files
+supabase/.env*
+supabase/functions/.env*
+supabase/functions/**/.env*
 
 # Editor directories and files
 .vscode/*
@@ -22,4 +45,44 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.env
+
+# OS specific
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build output
+build/
+out/
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# IDE specific
+*.swp
+*.swo
+*~
+.DS_Store
+.vscode-test
+.nyc_output
+
+# Test coverage
+coverage/
+*.lcov
+
+# Package manager specific
+.pnp
+.pnp.js
+npm-shrinkwrap.json
+
+# Vercel
+.vercel/
+.vercel-build-env
+.vercel-*.json
+
+# Local development
+.local
+.cache
+temp/
+tmp/
