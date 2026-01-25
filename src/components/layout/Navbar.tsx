@@ -185,14 +185,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;>
-                <Button variant="rocket" className="w-full">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>}
-    </nav>;
-};
 export default Navbar;
