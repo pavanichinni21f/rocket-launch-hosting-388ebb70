@@ -63,16 +63,68 @@ const HostingControlPanel: React.FC = () => {
   }, [accountId]);
 
   const loadAccount = async () => {
-    // Mock account data - in real app, fetch from API
-    setAccount({
-      id: accountId || '1',
-      name: 'My Hosting Account',
-      plan: 'VPS Business',
-      status: 'active',
-      domain: 'example.com',
-      created_at: '2025-01-15T10:00:00Z'
-    });
-    setLoading(false);
+    try {
+      if (!accountId) {
+        // Get first account for user
+        const { data: accounts } = await supabase
+          .from('hosting_accounts')
+          .select('*')
+          .limit(1);
+
+        if (accounts && accounts.length > 0) {
+          const acc = accounts[0];
+          setAccount({
+            id: acc.id,
+            name: acc.name || 'Hosting Account',
+            plan: acc.plan || 'Shared Hosting',
+            status: acc.is_active ? 'active' : 'inactive',
+            domain: acc.primary_domain,
+            created_at: acc.created_at
+          });
+        } else {
+          // Fallback to demo account
+          setAccount({
+            id: '1',
+            name: 'Demo Hosting Account',
+            plan: 'Shared Hosting',
+            status: 'active',
+            domain: 'example.com',
+            created_at: new Date().toISOString()
+          });
+        }
+      } else {
+        // Fetch specific account
+        const { data: account } = await supabase
+          .from('hosting_accounts')
+          .select('*')
+          .eq('id', accountId)
+          .single();
+
+        if (account) {
+          setAccount({
+            id: account.id,
+            name: account.name || 'Hosting Account',
+            plan: account.plan || 'Shared Hosting',
+            status: account.is_active ? 'active' : 'inactive',
+            domain: account.primary_domain,
+            created_at: account.created_at
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading account:', error);
+      // Fallback demo account
+      setAccount({
+        id: accountId || '1',
+        name: 'Demo Hosting Account',
+        plan: 'Shared Hosting',
+        status: 'active',
+        domain: 'example.com',
+        created_at: new Date().toISOString()
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {

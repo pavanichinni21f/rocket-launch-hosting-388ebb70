@@ -36,6 +36,7 @@ interface AuthContextType {
   unenrollMFA: (factorId: string) => Promise<{ error: AuthError | null }>;
   listSessions: () => Promise<{ error: Error | null; data?: any[] }>;
   revokeSession: (sessionId: string) => Promise<{ error: Error | null }>;
+  hasRole: (role: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -306,6 +307,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: new Error('Not implemented') };
   };
 
+  const hasRole = (role: string): boolean => {
+    if (!user) return false;
+    // Check user metadata for roles
+    const roles = user.user_metadata?.roles || [];
+    return roles.includes(role);
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -324,7 +332,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       verifyMFA,
       unenrollMFA,
       listSessions,
-      revokeSession
+      revokeSession,
+      hasRole
     }}>
       {children}
     </AuthContext.Provider>

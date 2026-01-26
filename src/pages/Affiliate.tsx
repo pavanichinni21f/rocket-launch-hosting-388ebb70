@@ -44,22 +44,69 @@ const Affiliate: React.FC = () => {
   const loadAffiliateData = async () => {
     if (!user) return;
 
-    const mockData: AffiliateData = {
-      isAffiliate: true,
-      referralCode: 'KS' + user.id.slice(0, 6).toUpperCase(),
-      totalReferrals: 23,
-      totalEarnings: 345.67,
-      pendingEarnings: 89.50,
-      referralLink: `https://ksfoundation.com?ref=${'KS' + user.id.slice(0, 6).toUpperCase()}`,
-      commissionRate: 20,
-      recentReferrals: [
-        { id: 1, email: 'user1@example.com', status: 'completed', earnings: 15.99, date: '2025-01-15' },
-        { id: 2, email: 'user2@example.com', status: 'pending', earnings: 0, date: '2025-01-14' },
-        { id: 3, email: 'user3@example.com', status: 'completed', earnings: 29.99, date: '2025-01-13' },
-      ]
-    };
+    try {
+      // Try to fetch affiliate data from Supabase
+      const { data: affiliateData, error } = await supabase
+        .from('affiliate_referrals')
+        .select('*')
+        .eq('user_id', user.id);
 
-    setData(mockData);
+      if (error || !affiliateData) {
+        // If no data, create initial mock data
+        const mockData: AffiliateData = {
+          isAffiliate: false,
+          referralCode: 'KS' + user.id.slice(0, 6).toUpperCase(),
+          totalReferrals: 0,
+          totalEarnings: 0,
+          pendingEarnings: 0,
+          referralLink: `https://ksfoundation.com?ref=${'KS' + user.id.slice(0, 6).toUpperCase()}`,
+          commissionRate: 20,
+          recentReferrals: []
+        };
+        setData(mockData);
+      } else {
+        // Process real data
+        const totalReferrals = affiliateData.length;
+        const totalEarnings = affiliateData
+          .filter(r => r.status === 'completed')
+          .reduce((sum, r) => sum + (r.commission_amount || 0), 0);
+        
+        const mockData: AffiliateData = {
+          isAffiliate: true,
+          referralCode: 'KS' + user.id.slice(0, 6).toUpperCase(),
+          totalReferrals,
+          totalEarnings,
+          pendingEarnings: affiliateData
+            .filter(r => r.status === 'pending')
+            .reduce((sum, r) => sum + (r.commission_amount || 0), 0),
+          referralLink: `https://ksfoundation.com?ref=${'KS' + user.id.slice(0, 6).toUpperCase()}`,
+          commissionRate: 20,
+          recentReferrals: affiliateData.map(r => ({
+            id: r.id,
+            email: r.referred_email,
+            status: r.status,
+            earnings: r.commission_amount || 0,
+            date: new Date(r.created_at).toISOString().split('T')[0]
+          }))
+        };
+        setData(mockData);
+      }
+    } catch (error) {
+      console.error('Error loading affiliate data:', error);
+      // Fallback to empty mock data
+      const mockData: AffiliateData = {
+        isAffiliate: false,
+        referralCode: 'KS' + user.id.slice(0, 6).toUpperCase(),
+        totalReferrals: 0,
+        totalEarnings: 0,
+        pendingEarnings: 0,
+        referralLink: `https://ksfoundation.com?ref=${'KS' + user.id.slice(0, 6).toUpperCase()}`,
+        commissionRate: 20,
+        recentReferrals: []
+      };
+      setData(mockData);
+    }
+    
     setLoading(false);
   };
 

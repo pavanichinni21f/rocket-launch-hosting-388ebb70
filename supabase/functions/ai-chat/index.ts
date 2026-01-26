@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,23 +12,36 @@ serve(async (req) => {
   }
 
   try {
+    // Verify JWT authentication
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Missing authentication" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { messages } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
-      // Mock fallback when API key not configured
-      const mockResponses = [
-        "Hello! I'm the KSF Assistant (demo mode). I can help you with hosting questions, billing, and technical support.",
-        "That's a great question! In production, I'd connect to our AI service to provide detailed answers.",
-        "I understand. Let me help you with that - though I'm currently in demo mode.",
-        "Thanks for reaching out! Our hosting plans start at ₹999/month. Would you like more details?",
-        "I can assist with domain setup, SSL certificates, and server configuration. What do you need?",
-      ];
-      const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
-      
       return new Response(
-        `data: {"choices":[{"delta":{"content":"${randomResponse}"}}]}\n\ndata: [DONE]\n\n`,
-        { headers: { ...corsHeaders, "Content-Type": "text/event-stream" } }
+        JSON.stringify({ error: "AI service not configured. Please contact support." }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

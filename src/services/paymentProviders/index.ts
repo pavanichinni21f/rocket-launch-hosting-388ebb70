@@ -1,39 +1,30 @@
-import * as mock from './mockProvider';
 import * as razorpay from './razorpayProvider';
 import * as payu from './payuProvider';
 
-const PROVIDER = (import.meta.env.VITE_PAYMENT_PROVIDER as string) || 'mock';
+const PROVIDER = (import.meta.env.VITE_PAYMENT_PROVIDER as string) || 'razorpay';
 
 export async function createCheckoutSession(payload: { userId: string; items: any[]; currency?: string; metadata?: any }) {
+  if (!PROVIDER || PROVIDER === '') {
+    throw new Error('Payment provider not configured. Contact support.');
+  }
+
   if (PROVIDER === 'razorpay') {
-    try {
-      return await razorpay.createRazorpayCheckoutSession(payload as any);
-    } catch (e) {
-      console.warn('Razorpay provider failed, falling back to mock:', e);
-      return mock.createMockCheckoutSession(payload);
-    }
+    return await razorpay.createRazorpayCheckoutSession(payload as any);
   }
 
   if (PROVIDER === 'payu') {
-    try {
-      return await payu.createPayUCheckoutSession(payload as any);
-    } catch (e) {
-      console.warn('PayU provider failed, falling back to mock:', e);
-      return mock.createMockCheckoutSession(payload);
-    }
+    return await payu.createPayUCheckoutSession(payload as any);
   }
 
-  // Default: mock
-  return mock.createMockCheckoutSession(payload);
+  throw new Error(`Unsupported payment provider: ${PROVIDER}`);
 }
 
 export async function verifyPayment(sessionId: string) {
   if (PROVIDER === 'razorpay') {
-    // Razorpay verification should be implemented server-side
     return { success: false };
   }
   if (PROVIDER === 'payu') {
     return { success: false };
   }
-  return mock.verifyMockPayment(sessionId);
+  throw new Error('Payment verification not configured');
 }

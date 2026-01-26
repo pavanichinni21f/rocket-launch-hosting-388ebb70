@@ -206,10 +206,8 @@ export default function Billing() {
       } else if (selectedPaymentMethod === 'gpay' && response.gpayDeepLink) {
         openGPay(response.gpayDeepLink);
         toast.info('Opening Google Pay...');
-      } else if (response.mockMode) {
-        // Mock mode - simulate success
-        toast.success('Demo payment successful!');
-        navigate('/billing?payment=success&mock=true');
+      } else {
+        toast.error('Payment initiation failed. Please try again.');
       }
     } catch (e) {
       toast.error('Payment failed. Please try again.');

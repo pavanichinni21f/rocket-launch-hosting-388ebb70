@@ -102,15 +102,11 @@ Deno.serve(async (req) => {
 
     // Check if Stripe is configured
     if (!plan.priceId) {
-      console.log('Stripe not configured, returning mock session');
-      // Return mock session for development
       return new Response(
         JSON.stringify({
-          sessionId: `mock_session_${Date.now()}`,
-          url: `${Deno.env.get('PUBLIC_URL') || ''}/billing?payment=success&mock=true`,
-          mockMode: true,
+          error: 'Stripe not configured. Please contact support.'
         }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

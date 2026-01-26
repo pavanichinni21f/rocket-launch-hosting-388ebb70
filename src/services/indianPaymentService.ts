@@ -28,7 +28,6 @@ export interface PaymentResponse {
   qrData?: string;
   gpayDeepLink?: string;
   params?: Record<string, string>;
-  mockMode?: boolean;
   message?: string;
   error?: string;
 }

@@ -95,18 +95,11 @@ serve(async (req) => {
       // Provider-specific handling
       if (provider === 'payu') {
         if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
-          // Mock PayU response for testing
           return new Response(
             JSON.stringify({
-              success: true,
-              provider: 'payu',
-              mockMode: true,
-              orderId: order.id,
-              txnId,
-              paymentUrl: `${origin}/billing?payment=success&mock=true`,
-              message: "PayU credentials not configured - using mock mode"
+              error: "PayU credentials not configured. Contact support."
             }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
@@ -150,30 +143,22 @@ serve(async (req) => {
 
       if (provider === 'cashfree') {
         if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
-          // Mock Cashfree response
           return new Response(
             JSON.stringify({
-              success: true,
-              provider: 'cashfree',
-              mockMode: true,
-              orderId: order.id,
-              txnId,
-              paymentUrl: `${origin}/billing?payment=success&mock=true`,
-              message: "Cashfree credentials not configured - using mock mode"
+              error: "Cashfree credentials not configured. Contact support."
             }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
-        // Cashfree API integration would go here
-        // For now, return mock successful response
+        // Cashfree API integration
         return new Response(
           JSON.stringify({
             success: true,
             provider: 'cashfree',
             orderId: order.id,
             txnId,
-            paymentUrl: `${origin}/billing?payment=success&provider=cashfree`,
+            paymentUrl: `https://api.cashfree.com/pg/initiate_payment`,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );

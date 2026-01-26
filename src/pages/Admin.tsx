@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Users, ShoppingCart, Server, Ticket, Activity, BarChart3 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Shield, Users, ShoppingCart, Server, Ticket, Activity, BarChart3, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import AdminOverview from '@/components/admin/AdminOverview';
 import UserManagement from '@/components/admin/UserManagement';
 import OrdersManagement from '@/components/admin/OrdersManagement';
@@ -12,8 +15,30 @@ import TicketsManagement from '@/components/admin/TicketsManagement';
 import SystemLogs from '@/components/admin/SystemLogs';
 
 export default function Admin() {
-  const { user, profile } = useAuth();
+  const { user, profile, hasRole } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check if user has admin role
+    if (!user) {
+      setIsAuthorized(false);
+      return;
+    }
+
+    // Verify admin role
+    const isAdmin = hasRole('admin') || hasRole('owner');
+    setIsAuthorized(isAdmin);
+
+    if (!isAdmin) {
+      // Redirect non-admin users
+      const redirectTimer = setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 3000);
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [user, hasRole, navigate]);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -23,6 +48,46 @@ export default function Admin() {
     { id: 'tickets', label: 'Tickets', icon: Ticket },
     { id: 'logs', label: 'Logs', icon: Activity },
   ];
+
+  // Authorization check
+  if (isAuthorized === null) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Verifying permissions...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 space-y-6">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <p className="font-bold">Access Denied - Admin Only</p>
+                <p>You do not have permission to access the admin dashboard. Only administrators and owners can view this page.</p>
+                <p className="text-sm">Redirecting to dashboard in 3 seconds...</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/dashboard')}
+                  className="mt-4"
+                >
+                  Go to Dashboard Now
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -43,7 +108,7 @@ export default function Admin() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Admin Session</CardTitle>
             <CardDescription>
-              Logged in as: {profile?.email || user?.email || 'Unknown'}
+              Logged in as: {profile?.email || user?.email || 'Unknown'} (Admin)
             </CardDescription>
           </CardHeader>
         </Card>
