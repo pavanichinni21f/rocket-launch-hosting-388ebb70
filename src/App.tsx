@@ -40,6 +40,7 @@ import Status from '@/pages/Status';
 import Hosting from '@/pages/Hosting';
 import RefundPolicy from '@/pages/RefundPolicy';
 import CookiePolicy from '@/pages/CookiePolicy';
+import AcceptableUsePolicy from '@/pages/AcceptableUsePolicy';
 import ForgotPassword from '@/pages/ForgotPassword';
 
 const queryClient = new QueryClient();
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
+            <Route path="/acceptable-use-policy" element={<AcceptableUsePolicy />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<ProtectedRoute><RequireRole role="admin"><Admin /></RequireRole></ProtectedRoute>} />
