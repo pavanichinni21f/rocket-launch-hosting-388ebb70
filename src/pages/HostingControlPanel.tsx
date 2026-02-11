@@ -78,7 +78,7 @@ const HostingControlPanel: React.FC = () => {
             name: acc.name || 'Hosting Account',
             plan: acc.plan || 'Shared Hosting',
             status: acc.is_active ? 'active' : 'inactive',
-            domain: acc.primary_domain,
+            domain: acc.domain,
             created_at: acc.created_at
           });
         } else {
@@ -106,7 +106,7 @@ const HostingControlPanel: React.FC = () => {
             name: account.name || 'Hosting Account',
             plan: account.plan || 'Shared Hosting',
             status: account.is_active ? 'active' : 'inactive',
-            domain: account.primary_domain,
+            domain: account.domain,
             created_at: account.created_at
           });
         }
