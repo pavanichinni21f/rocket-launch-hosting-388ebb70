@@ -8,10 +8,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    https: process.env.NODE_ENV === 'production' ? true : false,
-  },
-  preview: {
-    https: true,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
@@ -21,7 +17,6 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     target: 'esnext',
-    minify: 'terser',
     sourcemap: mode === 'development' ? 'inline' : false,
     rollupOptions: {
       output: {

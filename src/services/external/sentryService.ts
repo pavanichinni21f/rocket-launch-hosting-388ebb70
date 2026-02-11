@@ -1,119 +1,31 @@
 /**
- * Sentry Error Tracking Service
- * Captures and reports errors to Sentry
+ * Sentry Error Tracking Service (stub)
+ * Logs errors to console when Sentry is not installed.
  */
 
 export const sentryService = {
-  /**
-   * Initialize Sentry
-   */
   initialize: async () => {
     if (!import.meta.env.VITE_SENTRY_DSN) return;
-
-    try {
-      const Sentry = await import('@sentry/react');
-
-      Sentry.init({
-        dsn: import.meta.env.VITE_SENTRY_DSN,
-        environment: import.meta.env.MODE,
-        tracesSampleRate: 1.0,
-        debug: import.meta.env.DEV,
-        beforeSend(event) {
-          // Don't send errors in development
-          if (import.meta.env.DEV) return null;
-          return event;
-        },
-      });
-
-      // Global error handler
-      window.addEventListener('error', (event) => {
-        Sentry.captureException(event.error);
-      });
-
-      // Unhandled promise rejection handler
-      window.addEventListener('unhandledrejection', (event) => {
-        Sentry.captureException(event.reason);
-      });
-    } catch (error) {
-      console.error('Failed to initialize Sentry:', error);
-    }
+    console.info('[Sentry] DSN configured but @sentry/react not installed. Errors will be logged to console.');
   },
 
-  /**
-   * Capture exception
-   */
   captureException: (error: Error, context?: Record<string, any>) => {
-    try {
-      import('@sentry/react').then((Sentry) => {
-        Sentry.captureException(error, {
-          contexts: {
-            custom: context,
-          },
-        });
-      });
-    } catch (err) {
-      console.error('Failed to capture exception:', err);
-    }
+    console.error('[Sentry stub] Exception:', error, context);
   },
 
-  /**
-   * Capture message
-   */
   captureMessage: (message: string, level: 'info' | 'warning' | 'error' = 'info') => {
-    try {
-      import('@sentry/react').then((Sentry) => {
-        Sentry.captureMessage(message, level);
-      });
-    } catch (err) {
-      console.error('Failed to capture message:', err);
-    }
+    console[level === 'error' ? 'error' : level === 'warning' ? 'warn' : 'info']('[Sentry stub]', message);
   },
 
-  /**
-   * Set user context
-   */
-  setUser: (userId: string, email?: string, name?: string) => {
-    try {
-      import('@sentry/react').then((Sentry) => {
-        Sentry.setUser({
-          id: userId,
-          email,
-          username: name,
-        });
-      });
-    } catch (err) {
-      console.error('Failed to set user context:', err);
-    }
+  setUser: (userId: string, _email?: string, _name?: string) => {
+    console.info('[Sentry stub] setUser:', userId);
   },
 
-  /**
-   * Clear user context
-   */
   clearUser: () => {
-    try {
-      import('@sentry/react').then((Sentry) => {
-        Sentry.setUser(null);
-      });
-    } catch (err) {
-      console.error('Failed to clear user context:', err);
-    }
+    console.info('[Sentry stub] clearUser');
   },
 
-  /**
-   * Add breadcrumb
-   */
-  addBreadcrumb: (message: string, category: string, data?: Record<string, any>) => {
-    try {
-      import('@sentry/react').then((Sentry) => {
-        Sentry.addBreadcrumb({
-          message,
-          category,
-          data,
-          level: 'info',
-        });
-      });
-    } catch (err) {
-      console.error('Failed to add breadcrumb:', err);
-    }
+  addBreadcrumb: (message: string, category: string, _data?: Record<string, any>) => {
+    console.debug('[Sentry stub] breadcrumb:', category, message);
   },
 };
