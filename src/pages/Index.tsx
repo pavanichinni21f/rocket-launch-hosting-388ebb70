@@ -1,4 +1,5 @@
 import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 import HeroSection from '@/components/home/HeroSection';
 import PlanComparison from '@/components/home/PlanComparison';
 import PlanFinderQuiz from '@/components/home/PlanFinderQuiz';
@@ -31,6 +32,7 @@ const Index = () => {
         <TrustSection />
         <CTASection />
       </main>
+      <Footer />
       <LiveChat />
     </div>
   );

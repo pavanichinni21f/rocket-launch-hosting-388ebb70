@@ -42,6 +42,7 @@ import RefundPolicy from '@/pages/RefundPolicy';
 import CookiePolicy from '@/pages/CookiePolicy';
 import AcceptableUsePolicy from '@/pages/AcceptableUsePolicy';
 import ForgotPassword from '@/pages/ForgotPassword';
+import OTPLogin from '@/pages/OTPLogin';
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,7 @@ const App = () => (
             <Route path="/cloud" element={<CloudHosting />} />
             <Route path="/domains" element={<Domains />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/otp-login" element={<OTPLogin />} />
             
             {/* Legal Pages */}
             <Route path="/terms" element={<Terms />} />
