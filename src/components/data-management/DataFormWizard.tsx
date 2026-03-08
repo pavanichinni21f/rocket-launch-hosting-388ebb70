@@ -211,13 +211,13 @@ export const DataFormWizard: React.FC<DataFormWizardProps> = ({
       case 2:
         return (
           <div className="space-y-4">
-            <div>
+             <div>
               <label className="text-sm font-medium">Rich Content</label>
-              <ReactQuill
+              <Textarea
                 value={watchedValues.richContent || ''}
-                onChange={(value) => setValue('richContent', value)}
-                theme="snow"
-                className="mt-2"
+                onChange={(e) => setValue('richContent', e.target.value)}
+                className="mt-2 min-h-[200px]"
+                placeholder="Enter content here..."
               />
             </div>
           </div>
