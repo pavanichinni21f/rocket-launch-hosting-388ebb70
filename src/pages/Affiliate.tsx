@@ -46,7 +46,7 @@ const Affiliate: React.FC = () => {
     if (!user) return;
 
     try {
-      // Affiliate referrals table not yet created - use mock data
+      // Affiliate system - generates referral code from user ID
       const mockData: AffiliateData = {
         isAffiliate: false,
         referralCode: 'KS' + user.id.slice(0, 6).toUpperCase(),

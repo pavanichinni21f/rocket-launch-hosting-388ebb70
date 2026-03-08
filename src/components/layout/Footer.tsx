@@ -59,16 +59,16 @@ const Footer = () => {
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img 
                 src={ksLogo} 
-                alt="Rocket Launchpad" 
+                alt="KSFoundation" 
                 className="h-12 w-12 object-contain"
               />
               <span className="text-xl font-bold">
-                <span className="gradient-text-orange">Rocket</span>
-                <span className="text-foreground"> Launchpad</span>
+                <span className="gradient-text-orange">KS</span>
+                <span className="text-foreground">Foundation</span>
               </span>
             </Link>
             <p className="text-sm text-muted-foreground mb-6">
-              Premium web hosting trusted by millions worldwide. Fast, secure, and reliable.
+              Premium web hosting trusted by businesses across India. Fast, secure, and reliable infrastructure.
             </p>
             {/* Social Links */}
             <div className="flex gap-3">
@@ -107,7 +107,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Rocket Launchpad. All rights reserved.
+            © {new Date().getFullYear()} KSFoundation. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
             <Link to="/terms" className="hover:text-primary transition-colors">Terms</Link>

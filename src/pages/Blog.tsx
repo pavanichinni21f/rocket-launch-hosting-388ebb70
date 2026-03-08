@@ -14,19 +14,19 @@ const blogPosts = [
     excerpt: 'A comprehensive guide to selecting the perfect hosting solution based on your specific needs and budget.',
     category: 'Guides',
     author: 'Priya Sharma',
-    date: '2024-01-15',
+    date: '2025-03-01',
     readTime: '8 min read',
-    image: '📊',
+    gradient: 'from-blue-500/20 to-cyan-500/20',
   },
   {
     id: 2,
-    title: 'Top 10 Website Security Best Practices for 2024',
+    title: 'Top 10 Website Security Best Practices for 2025',
     excerpt: 'Protect your website from cyber threats with these essential security measures every site owner should implement.',
     category: 'Security',
     author: 'Amit Patel',
-    date: '2024-01-12',
+    date: '2025-02-25',
     readTime: '6 min read',
-    image: '🔒',
+    gradient: 'from-red-500/20 to-orange-500/20',
   },
   {
     id: 3,
@@ -34,9 +34,9 @@ const blogPosts = [
     excerpt: 'Learn how to speed up your WordPress site with these proven optimization techniques and plugins.',
     category: 'WordPress',
     author: 'Sneha Reddy',
-    date: '2024-01-10',
+    date: '2025-02-20',
     readTime: '10 min read',
-    image: '⚡',
+    gradient: 'from-purple-500/20 to-pink-500/20',
   },
   {
     id: 4,
@@ -44,9 +44,9 @@ const blogPosts = [
     excerpt: 'Everything you need to know about SSL certificates, why they matter, and how to set them up.',
     category: 'Security',
     author: 'Rajesh Kumar',
-    date: '2024-01-08',
+    date: '2025-02-15',
     readTime: '5 min read',
-    image: '🛡️',
+    gradient: 'from-green-500/20 to-emerald-500/20',
   },
   {
     id: 5,
@@ -54,9 +54,9 @@ const blogPosts = [
     excerpt: 'A complete guide to migrating your website to a new host without downtime or data loss.',
     category: 'Tutorials',
     author: 'Priya Sharma',
-    date: '2024-01-05',
+    date: '2025-02-10',
     readTime: '12 min read',
-    image: '🚀',
+    gradient: 'from-amber-500/20 to-yellow-500/20',
   },
   {
     id: 6,
@@ -64,9 +64,9 @@ const blogPosts = [
     excerpt: 'Compare the pros and cons of cloud and shared hosting to make an informed decision for your project.',
     category: 'Guides',
     author: 'Amit Patel',
-    date: '2024-01-02',
+    date: '2025-02-05',
     readTime: '7 min read',
-    image: '☁️',
+    gradient: 'from-indigo-500/20 to-blue-500/20',
   },
 ];
 
@@ -124,8 +124,8 @@ export default function Blog() {
               >
                 <Card className="h-full hover:shadow-lg transition-shadow group cursor-pointer">
                   <CardHeader className="pb-0">
-                    <div className="aspect-video rounded-lg bg-gradient-to-br from-primary/10 to-orange-500/10 flex items-center justify-center text-5xl mb-4">
-                      {post.image}
+                    <div className={`aspect-video rounded-lg bg-gradient-to-br ${post.gradient} flex items-center justify-center mb-4`}>
+                      <span className="text-lg font-bold text-muted-foreground/50">{post.category}</span>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="secondary">{post.category}</Badge>
