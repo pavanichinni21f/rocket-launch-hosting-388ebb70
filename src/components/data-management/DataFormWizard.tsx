@@ -12,8 +12,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
 import { ChevronLeft, ChevronRight, Save, Upload, X } from 'lucide-react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 
 // Sanitize HTML to prevent XSS attacks
 const sanitizeHtml = (html: string): string => {
