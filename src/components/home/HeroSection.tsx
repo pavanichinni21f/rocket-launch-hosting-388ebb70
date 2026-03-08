@@ -62,9 +62,9 @@ const HeroSection = () => {
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight animate-slide-up">
-            <span className="text-foreground">Launch Your Website</span>
+            <span className="text-foreground">Premium Hosting</span>
             <br />
-            <span className="gradient-text-orange">At Rocket Speed</span>
+            <span className="gradient-text-orange">Built for India</span>
           </h1>
 
           {/* Subheading */}
