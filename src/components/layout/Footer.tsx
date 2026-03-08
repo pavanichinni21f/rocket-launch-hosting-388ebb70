@@ -59,16 +59,16 @@ const Footer = () => {
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img 
                 src={ksLogo} 
-                alt="Rocket Launchpad" 
+                alt="KSFoundation" 
                 className="h-12 w-12 object-contain"
               />
               <span className="text-xl font-bold">
-                <span className="gradient-text-orange">Rocket</span>
-                <span className="text-foreground"> Launchpad</span>
+                <span className="gradient-text-orange">KS</span>
+                <span className="text-foreground">Foundation</span>
               </span>
             </Link>
             <p className="text-sm text-muted-foreground mb-6">
-              Premium web hosting trusted by millions worldwide. Fast, secure, and reliable.
+              Premium web hosting trusted by businesses across India. Fast, secure, and reliable infrastructure.
             </p>
             {/* Social Links */}
             <div className="flex gap-3">
