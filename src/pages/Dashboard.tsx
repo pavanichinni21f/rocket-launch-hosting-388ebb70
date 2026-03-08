@@ -67,7 +67,6 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import jsPDF from 'jspdf';
-import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 
 interface HostingAccount {
