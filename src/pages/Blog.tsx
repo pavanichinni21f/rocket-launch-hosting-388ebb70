@@ -124,8 +124,8 @@ export default function Blog() {
               >
                 <Card className="h-full hover:shadow-lg transition-shadow group cursor-pointer">
                   <CardHeader className="pb-0">
-                    <div className="aspect-video rounded-lg bg-gradient-to-br from-primary/10 to-orange-500/10 flex items-center justify-center text-5xl mb-4">
-                      {post.image}
+                    <div className={`aspect-video rounded-lg bg-gradient-to-br ${post.gradient} flex items-center justify-center mb-4`}>
+                      <span className="text-lg font-bold text-muted-foreground/50">{post.category}</span>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="secondary">{post.category}</Badge>
