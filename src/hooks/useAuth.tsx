@@ -307,11 +307,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: new Error('Not implemented') };
   };
 
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+
+  // Fetch user roles from DB
+  useEffect(() => {
+    async function fetchRoles() {
+      if (!user) { setUserRoles([]); return; }
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      setUserRoles(data?.map(r => r.role) || []);
+    }
+    fetchRoles();
+  }, [user]);
+
   const hasRole = (role: string): boolean => {
     if (!user) return false;
-    // Check user metadata for roles
-    const roles = user.user_metadata?.roles || [];
-    return roles.includes(role);
+    if (role === 'admin' && userRoles.includes('owner')) return true;
+    return userRoles.includes(role);
   };
 
   return (

@@ -149,7 +149,7 @@ export default function About() {
                 transition={{ duration: 0.3, delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="text-5xl mb-3">{member.avatar}</div>
+                <div className={`w-16 h-16 rounded-full ${member.color} flex items-center justify-center text-xl font-bold mx-auto mb-3`}>{member.initials}</div>
                 <h3 className="font-semibold">{member.name}</h3>
                 <p className="text-sm text-muted-foreground">{member.role}</p>
               </motion.div>

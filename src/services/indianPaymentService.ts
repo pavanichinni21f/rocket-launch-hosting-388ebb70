@@ -179,12 +179,6 @@ export function getAvailablePaymentMethods(): Array<{
       icon: '🔵',
       description: 'Pay with Google Pay',
     },
-    {
-      id: 'cashfree',
-      name: 'Cashfree',
-      icon: '💰',
-      description: 'Multiple Payment Options',
-    },
   ];
 }
 

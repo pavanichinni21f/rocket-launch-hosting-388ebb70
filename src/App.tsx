@@ -71,6 +71,7 @@ const App = () => (
             <Route path="/domains" element={<Domains />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/otp-login" element={<OTPLogin />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* Legal Pages */}
             <Route path="/terms" element={<Terms />} />
