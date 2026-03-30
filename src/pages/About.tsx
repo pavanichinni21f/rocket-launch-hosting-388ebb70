@@ -33,10 +33,10 @@ const values = [
 ];
 
 const team = [
-  { name: 'Rajesh Kumar', role: 'CEO & Founder', avatar: '👨‍💼' },
-  { name: 'Priya Sharma', role: 'CTO', avatar: '👩‍💻' },
-  { name: 'Amit Patel', role: 'Head of Support', avatar: '👨‍🔧' },
-  { name: 'Sneha Reddy', role: 'Lead Engineer', avatar: '👩‍🔬' },
+  { name: 'Rajesh Kumar', role: 'CEO & Founder', initials: 'RK', color: 'bg-primary/20 text-primary' },
+  { name: 'Priya Sharma', role: 'CTO', initials: 'PS', color: 'bg-secondary/20 text-secondary' },
+  { name: 'Amit Patel', role: 'Head of Support', initials: 'AP', color: 'bg-accent/20 text-accent' },
+  { name: 'Sneha Reddy', role: 'Lead Engineer', initials: 'SR', color: 'bg-success/20 text-success' },
 ];
 
 export default function About() {
