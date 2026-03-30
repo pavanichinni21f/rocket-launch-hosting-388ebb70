@@ -33,10 +33,10 @@ const values = [
 ];
 
 const team = [
-  { name: 'Rajesh Kumar', role: 'CEO & Founder', avatar: '👨‍💼' },
-  { name: 'Priya Sharma', role: 'CTO', avatar: '👩‍💻' },
-  { name: 'Amit Patel', role: 'Head of Support', avatar: '👨‍🔧' },
-  { name: 'Sneha Reddy', role: 'Lead Engineer', avatar: '👩‍🔬' },
+  { name: 'Rajesh Kumar', role: 'CEO & Founder', initials: 'RK', color: 'bg-primary/20 text-primary' },
+  { name: 'Priya Sharma', role: 'CTO', initials: 'PS', color: 'bg-secondary/20 text-secondary' },
+  { name: 'Amit Patel', role: 'Head of Support', initials: 'AP', color: 'bg-accent/20 text-accent' },
+  { name: 'Sneha Reddy', role: 'Lead Engineer', initials: 'SR', color: 'bg-success/20 text-success' },
 ];
 
 export default function About() {
@@ -149,7 +149,7 @@ export default function About() {
                 transition={{ duration: 0.3, delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="text-5xl mb-3">{member.avatar}</div>
+                <div className={`w-16 h-16 rounded-full ${member.color} flex items-center justify-center text-xl font-bold mx-auto mb-3`}>{member.initials}</div>
                 <h3 className="font-semibold">{member.name}</h3>
                 <p className="text-sm text-muted-foreground">{member.role}</p>
               </motion.div>

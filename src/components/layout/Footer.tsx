@@ -44,6 +44,7 @@ const footerLinks = {
       { label: 'Report Abuse', href: '/contact' },
       { label: 'Terms of Service', href: '/terms' },
       { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Refund Policy', href: '/refund-policy' },
     ],
   },
 };
