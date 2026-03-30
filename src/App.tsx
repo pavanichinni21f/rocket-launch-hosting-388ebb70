@@ -43,6 +43,7 @@ import CookiePolicy from '@/pages/CookiePolicy';
 import AcceptableUsePolicy from '@/pages/AcceptableUsePolicy';
 import ForgotPassword from '@/pages/ForgotPassword';
 import OTPLogin from '@/pages/OTPLogin';
+import ResetPassword from '@/components/auth/ResetPassword';
 
 const queryClient = new QueryClient();
 
