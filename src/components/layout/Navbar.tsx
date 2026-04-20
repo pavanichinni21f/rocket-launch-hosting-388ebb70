@@ -27,12 +27,21 @@ const Navbar = () => {
         { label: 'WordPress Hosting', href: '/wordpress' },
         { label: 'Cloud Hosting', href: '/cloud' },
         { label: 'VPS Hosting', href: '/vps' },
+        { label: 'Reseller Hosting', href: '/resellers' },
+        { label: 'Email Hosting', href: '/email' },
       ]
     },
     {
-      label: 'Domains',
-      hasDropdown: false,
-      href: '/domains'
+      label: 'Products',
+      hasDropdown: true,
+      href: '#',
+      submenu: [
+        { label: 'Domains', href: '/domains' },
+        { label: 'SSL Certificates', href: '/ssl' },
+        { label: 'CDN', href: '/cdn' },
+        { label: 'Security', href: '/security' },
+        { label: 'Free Migration', href: '/migrate' },
+      ]
     },
     {
       label: 'Features',
@@ -45,14 +54,27 @@ const Navbar = () => {
       href: '/pricing'
     },
     {
+      label: 'Resources',
+      hasDropdown: true,
+      href: '#',
+      submenu: [
+        { label: 'Blog', href: '/blog' },
+        { label: 'Knowledge Base', href: '/kb' },
+        { label: 'FAQ', href: '/faq' },
+        { label: 'Testimonials', href: '/testimonials' },
+        { label: 'Status', href: '/status' },
+      ]
+    },
+    {
       label: 'Company',
       hasDropdown: true,
       href: '#',
       submenu: [
         { label: 'About Us', href: '/about' },
-        { label: 'Blog', href: '/blog' },
         { label: 'Contact', href: '/contact' },
-        { label: 'Status', href: '/status' },
+        { label: 'Careers', href: '/careers' },
+        { label: 'Partners & Press', href: '/partners' },
+        { label: 'Affiliate', href: '/affiliate' },
       ]
     }
   ];
