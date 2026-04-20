@@ -47,6 +47,18 @@ import ResetPassword from '@/components/auth/ResetPassword';
 import Projects from '@/pages/Projects';
 import Messages from '@/pages/Messages';
 import Checkout from '@/pages/Checkout';
+import Resellers from '@/pages/Resellers';
+import EmailHosting from '@/pages/EmailHosting';
+import SSL from '@/pages/SSL';
+import CDN from '@/pages/CDN';
+import Security from '@/pages/Security';
+import Migrate from '@/pages/Migrate';
+import KnowledgeBase from '@/pages/KnowledgeBase';
+import FAQ from '@/pages/FAQ';
+import Testimonials from '@/pages/Testimonials';
+import Careers from '@/pages/Careers';
+import Partners from '@/pages/Partners';
+import Sitemap from '@/pages/Sitemap';
 
 const queryClient = new QueryClient();
 
@@ -72,6 +84,18 @@ const App = () => (
             <Route path="/wordpress" element={<WordPressHosting />} />
             <Route path="/cloud" element={<CloudHosting />} />
             <Route path="/domains" element={<Domains />} />
+            <Route path="/resellers" element={<Resellers />} />
+            <Route path="/email" element={<EmailHosting />} />
+            <Route path="/ssl" element={<SSL />} />
+            <Route path="/cdn" element={<CDN />} />
+            <Route path="/security" element={<Security />} />
+            <Route path="/migrate" element={<Migrate />} />
+            <Route path="/kb" element={<KnowledgeBase />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/testimonials" element={<Testimonials />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/otp-login" element={<OTPLogin />} />
             <Route path="/reset-password" element={<ResetPassword />} />
