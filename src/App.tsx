@@ -44,6 +44,9 @@ import AcceptableUsePolicy from '@/pages/AcceptableUsePolicy';
 import ForgotPassword from '@/pages/ForgotPassword';
 import OTPLogin from '@/pages/OTPLogin';
 import ResetPassword from '@/components/auth/ResetPassword';
+import Projects from '@/pages/Projects';
+import Messages from '@/pages/Messages';
+import Checkout from '@/pages/Checkout';
 
 const queryClient = new QueryClient();
 
@@ -101,6 +104,9 @@ const App = () => (
             <Route path="/affiliate" element={<ProtectedRoute><Affiliate /></ProtectedRoute>} />
             <Route path="/automation" element={<ProtectedRoute><Automation /></ProtectedRoute>} />
             <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
