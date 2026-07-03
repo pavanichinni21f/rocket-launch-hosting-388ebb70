@@ -45,7 +45,26 @@ serve(async (req) => {
       );
     }
 
-    const { messages } = await req.json();
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const parsed = ChatRequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: "Validation failed", details: parsed.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // Strip client-supplied system messages to prevent prompt override
+    const messages = parsed.data.messages
+      .filter((m) => m.role !== "system")
+      .map((m) => ({ role: m.role, content: m.content.trim().substring(0, 4000) }));
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
