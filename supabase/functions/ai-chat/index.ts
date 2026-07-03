@@ -1,5 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const MessageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().min(1).max(4000),
+});
+const ChatRequestSchema = z.object({
+  messages: z.array(MessageSchema).min(1).max(20),
+});
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,7 +45,26 @@ serve(async (req) => {
       );
     }
 
-    const { messages } = await req.json();
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const parsed = ChatRequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: "Validation failed", details: parsed.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // Strip client-supplied system messages to prevent prompt override
+    const messages = parsed.data.messages
+      .filter((m) => m.role !== "system")
+      .map((m) => ({ role: m.role, content: m.content.trim().substring(0, 4000) }));
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
