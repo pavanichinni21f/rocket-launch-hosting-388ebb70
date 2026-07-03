@@ -1,5 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const MessageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().min(1).max(4000),
+});
+const ChatRequestSchema = z.object({
+  messages: z.array(MessageSchema).min(1).max(20),
+});
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
