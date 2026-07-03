@@ -173,7 +173,7 @@ export async function updateOrderStatus(
 
     const { error } = await supabase
       .from('orders')
-      .update(updateData)
+      .update(updateData as never)
       .eq('id', orderId);
 
     if (error) {
