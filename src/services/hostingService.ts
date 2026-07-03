@@ -151,7 +151,7 @@ export async function updateHostingAccount(
 
     const { error } = await supabase
       .from('hosting_accounts')
-      .update(updateData)
+      .update(updateData as never)
       .eq('id', accountId);
 
     if (error) {
