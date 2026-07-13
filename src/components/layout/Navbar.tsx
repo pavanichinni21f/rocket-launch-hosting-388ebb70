@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, ChevronDown, Globe, MessageCircle } from 'lucide-react';
-import ksLogo from '@/assets/kslogo.png';
+import ksLogo from '@/assets/gslogo.png';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
